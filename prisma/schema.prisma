@@ -158,9 +158,10 @@ model Collection {
   seoTitle       String?
   seoDescription String?
 
-  photos      CollectionPhoto[]
-  ringCores   CollectionRingCore[]
-  inlayStyles CollectionInlayStyle[]
+  photos            CollectionPhoto[]
+  ringCores         CollectionRingCore[]
+  inlayStyles       CollectionInlayStyle[]
+  birthstoneOptions CollectionBirthstoneOption[]
 }
 
 model CollectionPhoto {
@@ -256,4 +257,59 @@ model CollectionInlayStyle {
   active    Boolean @default(true)
 
   @@unique([collectionId, inlayStyleId])
+}
+
+model Mineral {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name        String
+  slug        String  @unique
+  description String?
+
+  imageUrl String?
+  colorHex String?
+
+  active    Boolean @default(true)
+  featured  Boolean @default(false)
+  sortOrder Int     @default(0)
+
+  birthstoneOptions CollectionBirthstoneOption[]
+}
+
+model BirthstoneMonth {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name        String
+  monthNumber Int     @unique
+  active      Boolean @default(true)
+  sortOrder   Int     @default(0)
+
+  collectionOptions CollectionBirthstoneOption[]
+}
+
+model CollectionBirthstoneOption {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  collectionId String
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  birthstoneMonthId String
+  birthstoneMonth   BirthstoneMonth @relation(fields: [birthstoneMonthId], references: [id], onDelete: Cascade)
+
+  mineralId String
+  mineral   Mineral @relation(fields: [mineralId], references: [id], onDelete: Cascade)
+
+  imageUrl             String?
+  priceAdjustmentCents Int     @default(0)
+  defaultSelected      Boolean @default(false)
+  active               Boolean @default(true)
+  sortOrder            Int     @default(0)
+
+  @@unique([collectionId, birthstoneMonthId, mineralId])
 }

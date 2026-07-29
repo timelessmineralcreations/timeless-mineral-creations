@@ -4,6 +4,7 @@ import GeneralSection from "./GeneralSection";
 import ImagesSection from "./ImagesSection";
 import PricingSection from "./PricingSection";
 import RingCoresSection from "./RingCoresSection";
+import InlayStylesSection from "./InlayStylesSection";
 import VisibilitySection from "./VisibilitySection";
 import SeoSection from "./SeoSection";
 
@@ -19,7 +20,9 @@ import {
 export default function CollectionEditor({
   collection,
   ringCores,
+  inlayStyles,
   selectedRingCoreIds,
+  selectedInlayStyleIds,
   updateAction,
   deleteAction,
 }) {
@@ -37,6 +40,11 @@ export default function CollectionEditor({
         <RingCoresSection
           ringCores={ringCores}
           selectedRingCoreIds={selectedRingCoreIds}
+        />
+
+        <InlayStylesSection
+          inlayStyles={inlayStyles}
+          selectedInlayStyleIds={selectedInlayStyleIds}
         />
 
         <VisibilitySection collection={collection} />

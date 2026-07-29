@@ -23,7 +23,7 @@ export const dynamic = "force-dynamic";
 export default async function EditCollectionPage({ params }) {
   const { id } = await params;
 
-  const [collection, ringCores] = await Promise.all([
+  const [collection, ringCores, inlayStyles] = await Promise.all([
     prisma.collection.findUnique({
       where: {
         id,
@@ -40,10 +40,36 @@ export default async function EditCollectionPage({ params }) {
             ringCoreId: true,
           },
         },
+
+        inlayStyles: {
+          where: {
+            active: true,
+          },
+          orderBy: {
+            sortOrder: "asc",
+          },
+          select: {
+            inlayStyleId: true,
+          },
+        },
       },
     }),
 
     prisma.ringCore.findMany({
+      where: {
+        active: true,
+      },
+      orderBy: [
+        {
+          sortOrder: "asc",
+        },
+        {
+          name: "asc",
+        },
+      ],
+    }),
+
+    prisma.inlayStyle.findMany({
       where: {
         active: true,
       },
@@ -64,6 +90,10 @@ export default async function EditCollectionPage({ params }) {
 
   const selectedRingCoreIds = collection.ringCores.map(
     (assignment) => assignment.ringCoreId
+  );
+
+  const selectedInlayStyleIds = collection.inlayStyles.map(
+    (assignment) => assignment.inlayStyleId
   );
 
   return (
@@ -91,15 +121,17 @@ export default async function EditCollectionPage({ params }) {
 
           <p style={pageDescriptionStyle}>
             Update the collection details, pricing, images,
-            visibility, search information, and the ring cores
-            available to customers.
+            visibility, search information, ring cores, and inlay
+            styles available to customers.
           </p>
         </div>
 
         <CollectionEditor
           collection={collection}
           ringCores={ringCores}
+          inlayStyles={inlayStyles}
           selectedRingCoreIds={selectedRingCoreIds}
+          selectedInlayStyleIds={selectedInlayStyleIds}
           updateAction={updateCollection}
           deleteAction={deleteCollection}
         />

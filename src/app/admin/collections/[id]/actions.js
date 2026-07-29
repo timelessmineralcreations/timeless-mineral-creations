@@ -59,6 +59,15 @@ export async function updateCollection(formData) {
     ),
   ];
 
+  const selectedInlayStyleIds = [
+    ...new Set(
+      formData
+        .getAll("inlayStyleIds")
+        .map((value) => String(value).trim())
+        .filter(Boolean)
+    ),
+  ];
+
   if (!id) {
     throw new Error("Collection ID is missing.");
   }
@@ -128,6 +137,28 @@ export async function updateCollection(formData) {
     }
   }
 
+  if (selectedInlayStyleIds.length > 0) {
+    const validInlayStyles = await prisma.inlayStyle.findMany({
+      where: {
+        id: {
+          in: selectedInlayStyleIds,
+        },
+        active: true,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (
+      validInlayStyles.length !== selectedInlayStyleIds.length
+    ) {
+      throw new Error(
+        "One or more selected inlay styles are no longer active or do not exist."
+      );
+    }
+  }
+
   await prisma.$transaction(async (transaction) => {
     await transaction.collection.update({
       where: {
@@ -182,6 +213,42 @@ export async function updateCollection(formData) {
         create: {
           collectionId: id,
           ringCoreId,
+          active: true,
+          sortOrder: index,
+        },
+      });
+    }
+
+    await transaction.collectionInlayStyle.deleteMany({
+      where: {
+        collectionId: id,
+        inlayStyleId: {
+          notIn: selectedInlayStyleIds,
+        },
+      },
+    });
+
+    for (
+      let index = 0;
+      index < selectedInlayStyleIds.length;
+      index += 1
+    ) {
+      const inlayStyleId = selectedInlayStyleIds[index];
+
+      await transaction.collectionInlayStyle.upsert({
+        where: {
+          collectionId_inlayStyleId: {
+            collectionId: id,
+            inlayStyleId,
+          },
+        },
+        update: {
+          active: true,
+          sortOrder: index,
+        },
+        create: {
+          collectionId: id,
+          inlayStyleId,
           active: true,
           sortOrder: index,
         },
