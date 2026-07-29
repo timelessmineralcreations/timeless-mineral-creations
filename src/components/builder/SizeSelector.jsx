@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function SizeSelector({
   sizes,
   selectedSize,
@@ -27,6 +29,30 @@ export default function SizeSelector({
           </option>
         ))}
       </select>
+
+      <p
+        style={{
+          marginTop: "12px",
+          fontSize: "14px",
+          color: "rgba(255,255,255,.75)",
+          lineHeight: "1.6",
+          maxWidth: "500px",
+        }}
+      >
+        Not sure of your ring size? We offer a{" "}
+        <strong>complimentary reusable ring sizer</strong> for customers
+        planning to order.{" "}
+        <Link
+          href="/contact"
+          style={{
+            color: "#D4AF37",
+            textDecoration: "none",
+            fontWeight: 600,
+          }}
+        >
+          Contact us to request one.
+        </Link>
+      </p>
     </section>
   );
 }

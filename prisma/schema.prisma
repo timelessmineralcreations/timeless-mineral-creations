@@ -8,29 +8,252 @@ datasource db {
 }
 
 model Order {
-  id                String   @id @default(cuid())
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  stripeSessionId   String?  @unique
-  paymentStatus     String   @default("Pending")
+  stripeSessionId String  @unique
+  paymentIntentId String?
+  paymentStatus   String  @default("Paid")
 
-  customerName      String?
-  customerEmail     String?
-  customerPhone     String?
+  cancelledAt        DateTime?
+  cancellationReason String?
 
-  collectionName    String
-  material          String
-  style             String?
-  width             String?
-  size              String?
-  design            String?
+  refundedAmountCents Int      @default(0)
+  refundStatus        String?
+  refunds             Refund[]
+
+  customerName  String?
+  customerEmail String?
+  customerPhone String?
+
+  shippingName     String?
+  shippingAddress1 String?
+  shippingAddress2 String?
+  shippingCity     String?
+  shippingState    String?
+  shippingPostal   String?
+  shippingCountry  String?
+
+  subtotal     Float?
+  shippingCost Float?
+  taxAmount    Float?
+  totalPrice   Float
+
+  status        String  @default("Awaiting Memorial Materials")
+  customerNote  String?
+  internalNotes String?
+
+  // Production checklist
+  coreConfirmedAt      DateTime?
+  sizeConfirmedAt      DateTime?
+  materialsPreparedAt  DateTime?
+  buildCompletedAt     DateTime?
+  engravingCompletedAt DateTime?
+  qualityCheckedAt     DateTime?
+  photosTakenAt        DateTime?
+  packagedAt           DateTime?
+
+  // Incoming package from the customer
+  incomingCarrier        String?
+  incomingTrackingNumber String?
+  incomingTrackingStatus String?
+  incomingEstimatedDate  DateTime?
+  incomingDeliveredAt    DateTime?
+
+  // Memorial materials intake
+  materialsReceivedAt DateTime?
+  materialsVerifiedAt DateTime?
+
+  // Thirty-day waiting reminder
+  waitingReminderSentAt DateTime?
+  waitingReminderMuted  Boolean   @default(false)
+
+  // Finished order shipped back to the customer
+  outgoingCarrier        String?
+  outgoingTrackingNumber String?
+  outgoingTrackingStatus String?
+  outgoingLabelUrl       String?
+  outgoingShippedAt      DateTime?
+  outgoingDeliveredAt    DateTime?
+
+  items OrderItem[]
+}
+
+model OrderItem {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  productType    String?
+  productName    String?
+  collectionName String
+  quantity       Int     @default(1)
+  unitPrice      Float
+
+  material String?
+  core     String?
+  style    String?
+  width    String?
+  size     String?
+  design   String?
 
   memorialMaterials String?
   minerals          String?
+  accentMaterials   String?
   glow              String?
   engraving         String?
 
-  totalPrice        Float
-  status            String   @default("Awaiting Memorial Materials")
+  configurationJson String?
+}
+
+model Refund {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  stripeRefundId String @unique
+
+  amountCents Int
+  status      String
+  reason      String?
+
+  requestedByEmail String?
+}
+
+model Collection {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Main collection information
+  name        String
+  slug        String @unique
+  description String
+
+  // Card and page images
+  heroImage String?
+  cardImage String?
+
+  // Pricing
+  startingPrice Float @default(0)
+
+  // Store organization
+  productType String @default("Ring")
+  sortOrder   Int    @default(0)
+
+  // Visibility
+  published  Boolean @default(false)
+  comingSoon Boolean @default(false)
+  featured   Boolean @default(false)
+
+  // Flexible configurator data
+  configurationJson String?
+
+  // Search-engine information
+  seoTitle       String?
+  seoDescription String?
+
+  photos      CollectionPhoto[]
+  ringCores   CollectionRingCore[]
+  inlayStyles CollectionInlayStyle[]
+}
+
+model CollectionPhoto {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  collectionId String
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  imageUrl String
+
+  altText String?
+  caption String?
+
+  sortOrder Int     @default(0)
+  featured  Boolean @default(false)
+}
+
+model RingCore {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name        String
+  slug        String  @unique
+  material    String
+  finish      String?
+  color       String?
+  supplier    String?
+  supplierUrl String?
+
+  supplierCostCents Int @default(0)
+
+  widthsJson            String?
+  sizesJson             String?
+  channelDimensionsJson String?
+  notes                 String?
+
+  imageUrl String?
+
+  active      Boolean              @default(true)
+  featured    Boolean              @default(false)
+  sortOrder   Int                  @default(0)
+  collections CollectionRingCore[]
+}
+
+model CollectionRingCore {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  collectionId String
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  ringCoreId String
+  ringCore   RingCore @relation(fields: [ringCoreId], references: [id], onDelete: Cascade)
+
+  sortOrder Int     @default(0)
+  active    Boolean @default(true)
+
+  @@unique([collectionId, ringCoreId])
+}
+
+model InlayStyle {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name        String
+  slug        String  @unique
+  description String?
+
+  imageUrl String?
+
+  active    Boolean @default(true)
+  featured  Boolean @default(false)
+  sortOrder Int     @default(0)
+
+  collections CollectionInlayStyle[]
+}
+
+model CollectionInlayStyle {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  collectionId String
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  inlayStyleId String
+  inlayStyle   InlayStyle @relation(fields: [inlayStyleId], references: [id], onDelete: Cascade)
+
+  sortOrder Int     @default(0)
+  active    Boolean @default(true)
+
+  @@unique([collectionId, inlayStyleId])
 }

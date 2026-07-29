@@ -1,6 +1,7 @@
 import OptionCard from "@/components/builder/OptionCard";
 
 function getWidthLabel(width) {
+  if (width == null) return "Slim";
   if (width <= 4) return "Slim";
   if (width <= 6) return "Classic";
   if (width <= 8) return "Bold";
@@ -19,20 +20,44 @@ export default function WidthSelector({
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(115px, 1fr))",
+          gridTemplateColumns:
+            "repeat(auto-fit, minmax(115px, 1fr))",
           gap: "12px",
         }}
       >
-        {widths?.map((widthOption, index) => (
-          <OptionCard
-            key={`${widthOption.width}-${widthOption.channel}-${index}`}
-            title={`${widthOption.width}mm`}
-            subtitle={getWidthLabel(widthOption.width)}
-            description={`${widthOption.channel}mm inlay channel`}
-            active={selectedWidth === widthOption}
-            onClick={() => onSelectWidth(widthOption)}
-          />
-        ))}
+        {widths?.map((widthOption, index) => {
+          const isSlimProfile =
+            widthOption.width == null;
+
+          const title = isSlimProfile
+            ? "Slim"
+            : `${widthOption.width}mm`;
+
+          const subtitle = isSlimProfile
+            ? "Delicate Profile"
+            : getWidthLabel(widthOption.width);
+
+          const description = isSlimProfile
+            ? "Fixed slim keepsake ring profile"
+            : widthOption.channel != null
+            ? `${widthOption.channel}mm inlay channel`
+            : "Fixed ring width";
+
+          return (
+            <OptionCard
+              key={`${
+                widthOption.width ?? "slim"
+              }-${widthOption.channel ?? "fixed"}-${index}`}
+              title={title}
+              subtitle={subtitle}
+              description={description}
+              active={selectedWidth === widthOption}
+              onClick={() =>
+                onSelectWidth(widthOption)
+              }
+            />
+          );
+        })}
       </div>
     </section>
   );

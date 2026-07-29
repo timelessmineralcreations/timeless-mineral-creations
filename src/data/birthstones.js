@@ -1,0 +1,14 @@
+export const birthstones = [
+  { id: "january", month: "January", stone: "Garnet" },
+  { id: "february", month: "February", stone: "Amethyst" },
+  { id: "march", month: "March", stone: "Aquamarine" },
+  { id: "april", month: "April", stone: "Diamond" },
+  { id: "may", month: "May", stone: "Emerald" },
+  { id: "june", month: "June", stone: "Pearl / Moonstone" },
+  { id: "july", month: "July", stone: "Ruby" },
+  { id: "august", month: "August", stone: "Peridot" },
+  { id: "september", month: "September", stone: "Sapphire" },
+  { id: "october", month: "October", stone: "Opal" },
+  { id: "november", month: "November", stone: "Citrine" },
+  { id: "december", month: "December", stone: "Blue Topaz" },
+];

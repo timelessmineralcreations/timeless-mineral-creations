@@ -13,6 +13,7 @@ export default function getBestRingPhoto({
   const width = selectedWidth?.width;
   const mineral = clean(selectedMinerals?.[0]?.id);
   const color = clean(selectedCore?.color);
+  const coreId = selectedCore?.id;
 
   const normalizedPhotos = photos.map((photo) => ({
     ...photo,
@@ -25,10 +26,12 @@ export default function getBestRingPhoto({
   const sameColor = (photo) => !photo.colorKey || photo.colorKey === color;
   const sameWidth = (photo) => photo.width === width;
   const sameMineral = (photo) => photo.mineralKey === mineral;
+  const sameCore = (photo) => !photo.coreId || photo.coreId === coreId;
 
   const exactMatch = normalizedPhotos.find(
     (photo) =>
       sameMaterial(photo) &&
+      sameCore(photo) &&
       sameColor(photo) &&
       sameWidth(photo) &&
       sameMineral(photo)
@@ -39,6 +42,7 @@ export default function getBestRingPhoto({
   const sameMaterialAndWidth = normalizedPhotos.find(
     (photo) =>
       sameMaterial(photo) &&
+      sameCore(photo) &&
       sameColor(photo) &&
       sameWidth(photo)
   );
@@ -48,21 +52,24 @@ export default function getBestRingPhoto({
   const sameMaterialAndMineral = normalizedPhotos.find(
     (photo) =>
       sameMaterial(photo) &&
+      sameCore(photo) &&
       sameColor(photo) &&
       sameMineral(photo)
   );
 
-const sameMaterialOnly = normalizedPhotos.find(
-  (photo) => sameMaterial(photo) && sameColor(photo)
-);
+  if (sameMaterialAndMineral) return sameMaterialAndMineral.image;
 
-if (sameMaterialOnly) return sameMaterialOnly.image;
+  const sameMaterialOnly = normalizedPhotos.find(
+    (photo) => sameMaterial(photo) && sameCore(photo) && sameColor(photo)
+  );
 
-const sameMaterialAnyColor = normalizedPhotos.find(
-  (photo) => photo.materialKey === material
-);
+  if (sameMaterialOnly) return sameMaterialOnly.image;
 
-if (sameMaterialAnyColor) return sameMaterialAnyColor.image;
+  const sameMaterialAnyColor = normalizedPhotos.find(
+    (photo) => photo.materialKey === material && sameCore(photo)
+  );
 
-return fallbackImage;
+  if (sameMaterialAnyColor) return sameMaterialAnyColor.image;
+
+  return fallbackImage;
 }

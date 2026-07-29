@@ -14,100 +14,155 @@ export default function SummaryCard({
   selectedWidth,
   selectedSize,
   selectedInlayStyle,
-  selectedMaterials,
-  selectedMinerals,
-  selectedAccentMaterials,
+  selectedMaterials = [],
+  selectedMinerals = [],
+  selectedChannels = {},
+  selectedAccentMaterials = [],
   selectedGlow,
-  selectedEngravingFont,
-  engravingEnabled,
-  engravingText,
-  totalPrice,
+  selectedKeepsakeMaterial,
+  selectedBirthstone,
+selectedEngravingFont,
+engravingEnabled,
+engravingType,
+engravingText,
+specialRequest,
+totalPrice,
 }) {
-
   const [copied, setCopied] = useState(false);
-const { addItem } = useCart();
+  const { addItem } = useCart();
+
   const memorialNames = selectedMaterials.map(
-    (id) => memorialMaterials.find((m) => m.id === id)?.name || id
+    (id) => memorialMaterials.find((material) => material.id === id)?.name || id
   );
 
   const mineralNames = selectedMinerals.map(
-    (mineral) => mineral.name || mineral.id
+    (mineral) => mineral?.name || mineral?.id
   );
 
   const accentNames = selectedAccentMaterials.map(
-    (id) => accentMaterials.find((a) => a.id === id)?.name || id
+    (id) => accentMaterials.find((accent) => accent.id === id)?.name || id
   );
 
   const styleName = `${selectedCore?.color ? `${selectedCore.color} ` : ""}${
     selectedCore?.edge || ""
-  }`;
+  }`.trim();
+
+  const channelDefinitions = selectedInlayStyle?.channels || [];
+
+  const channelSummaries = channelDefinitions.map((channel, index) => {
+  const selection = selectedChannels[channel.id] || {};
+
+  const memorialName = selection.memorial
+    ? memorialMaterials.find(
+        (material) => material.id === selection.memorial
+      )?.name || selection.memorial
+    : null;
+
+  const mineralName =
+    selection.mineral?.name || selection.mineral?.id || null;
+
+  const glowName =
+    selection.glow?.name ||
+    selection.glow?.id ||
+    (typeof selection.glow === "string" ? selection.glow : null);
+
+  let value = "Not selected";
+
+  if (memorialName && mineralName) {
+    value = `${memorialName} + ${mineralName}`;
+  } else if (memorialName) {
+    value = memorialName;
+  } else if (mineralName) {
+    value = mineralName;
+  }
+
+  return {
+    id: channel.id || `channel-${index + 1}`,
+    label: channel.name || `Channel ${index + 1}`,
+    value,
+    glowName,
+  };
+});
+
+  const usesChannelSelections = channelDefinitions.length > 0;
 
   async function handleSaveDesign() {
-  const design = {
-    collectionId: collection.id,
-    collectionName: collection.name,
-    material: selectedMaterial,
-    core: selectedCore?.id,
-    width: selectedWidth?.width,
-    size: selectedSize,
-    design: selectedInlayStyle?.id,
-    memorialMaterials: selectedMaterials,
-    minerals: selectedMinerals.map((m) => m.id),
-    accentMaterials: selectedAccentMaterials,
-    glow: selectedGlow?.id,
-    engravingEnabled,
-    engravingText,
-    engravingFont: selectedEngravingFont?.id,
-    totalPrice,
-  };
+    const design = {
+      collectionId: collection.id,
+      collectionName: collection.name,
+      material: selectedMaterial,
+      core: selectedCore?.id,
+      width: selectedWidth?.width,
+      size: selectedSize,
+      design: selectedInlayStyle?.id,
 
-  const designId = saveDesign(design);
+      memorialMaterials: selectedMaterials,
+      minerals: selectedMinerals.map((mineral) => mineral.id),
+      channels: serializeChannels(selectedChannels),
+      accentMaterials: selectedAccentMaterials,
+      keepsakeMaterial: selectedKeepsakeMaterial,
+      birthstone: selectedBirthstone,
+      
+      glow: selectedGlow?.id,
 
-  const cleanUrl = `${window.location.origin}${window.location.pathname}?design=${designId}`;
+      engravingEnabled,
+      engravingText,
+      engravingFont: selectedEngravingFont?.id,
 
-  await navigator.clipboard.writeText(cleanUrl);
+      totalPrice,
+    };
 
-  setCopied(true);
+    const designId = saveDesign(design);
 
-  setTimeout(() => {
-    setCopied(false);
-  }, 2000);
-}
+    const cleanUrl =
+      `${window.location.origin}${window.location.pathname}` +
+      `?design=${designId}`;
+
+    await navigator.clipboard.writeText(cleanUrl);
+
+    setCopied(true);
+
+    setTimeout(() => {
+      setCopied(false);
+    }, 2000);
+  }
 
   function handleAddToCart() {
-  const cartItem = {
-    collectionId: collection.id,
-    collectionName: collection.name,
+    const cartItem = {
+      collectionId: collection.id,
+      collectionName: collection.name,
 
-    material: selectedMaterial,
-    core: selectedCore,
-    width: selectedWidth,
-    size: selectedSize,
+      material: selectedMaterial,
+      core: selectedCore,
+      width: selectedWidth,
+      channelWidth: selectedWidth?.channel,
+      size: selectedSize,
 
-    design: selectedInlayStyle,
+      design: selectedInlayStyle,
 
-    memorialMaterials: selectedMaterials,
-    minerals: selectedMinerals,
-    accentMaterials: selectedAccentMaterials,
+      memorialMaterials: selectedMaterials,
+      minerals: selectedMinerals,
+      channels: selectedChannels,
+      accentMaterials: selectedAccentMaterials,
 
-    glow: selectedGlow,
+      glow: selectedGlow,
 
-    engravingEnabled,
-    engravingText,
-    engravingFont: selectedEngravingFont,
+      engravingEnabled,
+engravingType,
+engravingText,
+engravingFont: selectedEngravingFont,
 
-    price: totalPrice,
+specialRequest,
 
-    image:
-      typeof mainImage !== "undefined"
-        ? mainImage
-        : collection.heroImage,
-  };
+price: totalPrice,
 
-  addItem(cartItem);
+      image: mainImage || collection.heroImage,
+    };
 
-  alert("Your ring has been added to your cart!");
-}
+    addItem(cartItem);
+
+    alert("Your ring has been added to your cart!");
+  }
 
   return (
     <section
@@ -133,42 +188,159 @@ const { addItem } = useCart();
           marginBottom: 10,
         }}
       >
-        <CompactItem label="Material" value={selectedMaterial} />
-        <CompactItem label="Style" value={styleName || "Not selected"} />
         <CompactItem
-          label="Width"
-          value={selectedWidth?.width ? `${selectedWidth.width}mm` : "Not selected"}
+          label="Material"
+          value={selectedMaterial || "Not selected"}
         />
+
         <CompactItem
-          label="Channel"
-          value={selectedWidth?.channel ? `${selectedWidth.channel}mm` : "Not selected"}
+          label="Style"
+          value={styleName || "Not selected"}
         />
-        <CompactItem label="Size" value={selectedSize || "Not selected"} />
+
+        {collection.builder === "keepsake" ? (
+  <CompactItem
+    label="Profile"
+    value="Slim"
+  />
+) : (
+  <>
+    <CompactItem
+      label="Width"
+      value={
+        selectedWidth?.width
+          ? `${selectedWidth.width}mm`
+          : "Not selected"
+      }
+    />
+
+    <CompactItem
+      label="Channel"
+      value={
+        selectedWidth?.channel
+          ? `${selectedWidth.channel}mm`
+          : "Not selected"
+      }
+    />
+  </>
+)}
+
+        <CompactItem
+          label="Size"
+          value={selectedSize || "Not selected"}
+        />
       </div>
 
-      <SummaryRow label="Design" value={selectedInlayStyle?.name || "Not selected"} />
+      {collection.builder !== "keepsake" && (
+  <SummaryRow
+    label="Design"
+    value={selectedInlayStyle?.name || "Not selected"}
+  />
+)}
+{collection.builder === "keepsake" ? (
+  <>
+    <SummaryRow
+      label="Keepsake Material"
+      value={
+        selectedKeepsakeMaterial === "breastMilk"
+          ? "Breast Milk"
+          : "Cremation Ashes"
+      }
+    />
+
+    <SummaryRow
+      label="Birthstone"
+      value={
+        selectedBirthstone
+          ? `${selectedBirthstone.month} • ${selectedBirthstone.stone}`
+          : "Not selected"
+      }
+    />
+  </>
+) : usesChannelSelections ? (
+      
+        channelSummaries.map((channel) => (
+  <div key={channel.id}>
+    <SummaryRow
+      label={channel.label}
+      value={channel.value}
+    />
+
+    {channel.glowName && (
       <SummaryRow
-        label="Memorial Material"
-        value={memorialNames.length ? memorialNames.join(", ") : "None"}
+        label={`${channel.label} Glow Powder`}
+        value={channel.glowName}
       />
-      <SummaryRow
-        label="Minerals"
-        value={mineralNames.length ? mineralNames.join(", ") : "None"}
-      />
+    )}
+  </div>
+))
+      ) : (
+        <>
+          <SummaryRow
+            label="Memorial Material"
+            value={
+              memorialNames.length
+                ? memorialNames.join(", ")
+                : "None"
+            }
+          />
+
+          <SummaryRow
+            label="Minerals"
+            value={
+              mineralNames.length
+                ? mineralNames.join(", ")
+                : "None"
+            }
+          />
+        </>
+      )}
 
       {accentNames.length > 0 && (
-        <SummaryRow label="Accent Materials" value={accentNames.join(", ")} />
+        <SummaryRow
+          label="Accent Materials"
+          value={accentNames.join(", ")}
+        />
       )}
 
-      <SummaryRow label="Glow Powder" value={selectedGlow ? selectedGlow.name : "None"} />
+      {collection.builder !== "keepsake" && !usesChannelSelections && (
+  <SummaryRow
+    label="Glow Powder"
+    value={selectedGlow ? selectedGlow.name : "None"}
+  />
+)}
+
+      {collection.builder !== "keepsake" && (
+  <>
+    <SummaryRow
+  label="Engraving"
+  value={
+    !engravingEnabled
+      ? "None"
+      : engravingType === "customSignature"
+      ? "Handwritten Signature"
+      : engravingText || "(No text entered yet)"
+  }
+/>
+
+    {specialRequest && (
       <SummaryRow
-        label="Engraving"
-        value={engravingEnabled ? engravingText || "(No text entered yet)" : "None"}
+        label="⭐ Special Request"
+        value="Yes"
       />
+    )}
+  </>
+)}
 
-      {engravingEnabled && (
-        <SummaryRow label="Font" value={selectedEngravingFont.name} />
-      )}
+{collection.builder !== "keepsake" &&
+  engravingEnabled &&
+  engravingType !== "customSignature" && (
+    <SummaryRow
+      label="Font"
+      value={selectedEngravingFont?.name || "Not selected"}
+    />
+)}
+      
 
       <hr style={{ margin: "12px 0", opacity: 0.2 }} />
 
@@ -180,9 +352,12 @@ const { addItem } = useCart();
           marginBottom: 12,
         }}
       >
-        <span style={{ fontSize: 15, opacity: 0.8 }}>Total</span>
+        <span style={{ fontSize: 15, opacity: 0.8 }}>
+          Total
+        </span>
+
         <span style={{ fontSize: 23, fontWeight: "bold" }}>
-          ${totalPrice.toFixed(2)}
+          ${Number(totalPrice || 0).toFixed(2)}
         </span>
       </div>
 
@@ -257,6 +432,23 @@ const { addItem } = useCart();
   );
 }
 
+function serializeChannels(selectedChannels) {
+  return Object.fromEntries(
+    Object.entries(selectedChannels).map(([channelId, selection]) => [
+      channelId,
+      {
+        type: selection?.type || null,
+        memorial: selection?.memorial || null,
+        mineral: selection?.mineral?.id || null,
+        glow:
+          selection?.glow?.id ||
+          selection?.glow ||
+          null,
+      },
+    ])
+  );
+}
+
 function CompactItem({ label, value, full }) {
   return (
     <div
@@ -280,7 +472,9 @@ function CompactItem({ label, value, full }) {
         {label}
       </div>
 
-      <div style={{ fontSize: 13, fontWeight: 700 }}>{value}</div>
+      <div style={{ fontSize: 13, fontWeight: 700 }}>
+        {value}
+      </div>
     </div>
   );
 }
@@ -305,14 +499,22 @@ function SummaryRow({ label, value }) {
         ✓ {label}
       </div>
 
-      <div style={{ fontSize: 13, fontWeight: 600 }}>{value}</div>
+      <div style={{ fontSize: 13, fontWeight: 600 }}>
+        {value}
+      </div>
     </div>
   );
 }
 
 function TrustLine({ text }) {
   return (
-    <div style={{ display: "flex", gap: 7, alignItems: "flex-start" }}>
+    <div
+      style={{
+        display: "flex",
+        gap: 7,
+        alignItems: "flex-start",
+      }}
+    >
       <span>✓</span>
       <span>{text}</span>
     </div>

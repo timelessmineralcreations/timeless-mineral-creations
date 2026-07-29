@@ -26,7 +26,12 @@ export const signaturePricing = {
     soil: 10,
     fabric: 15,
     horseHair: 25,
+    
   },
+  accentMaterials: {
+  goldFoil: 20,
+  silverFoil: 20,
+},
 
   glow: 15,
 
@@ -34,4 +39,6 @@ export const signaturePricing = {
     standard: 20,
     customSignature: 50,
   },
+
+  specialRequest: 30,
 };

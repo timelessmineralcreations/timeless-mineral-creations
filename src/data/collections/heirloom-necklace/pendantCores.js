@@ -1,0 +1,39 @@
+export const heirloomNecklacePendantCores = [
+  {
+    id: "heirloom-necklace",
+
+    name: "Heirloom Necklace",
+
+    description:
+      "Elegant sterling silver bezel-set keepsake necklace available in white gold, yellow gold, and rose gold plated finishes.",
+
+    featured: true,
+
+    finishes: [
+      "White Gold Plated",
+      "Yellow Gold Plated",
+      "Rose Gold Plated",
+    ],
+
+    bezelSizes: [
+      "4x6",
+      "5x7",
+      "6x8",
+      "8x10",
+      "10x14",
+    ],
+
+    chainOptions: [
+      {
+        id: "none",
+        name: "Pendant Only",
+        price: 0,
+      },
+      {
+        id: "matching-chain",
+        name: 'Matching 16" Chain (+$20)',
+        price: 20,
+      },
+    ],
+  },
+];

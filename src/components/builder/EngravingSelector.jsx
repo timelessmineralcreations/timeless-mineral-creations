@@ -1,148 +1,275 @@
+"use client";
+
 const engravingFonts = [
-  { id: "arial", name: "Arial", fontFamily: "Arial, sans-serif" },
-  { id: "century", name: "Century", fontFamily: "Century, serif" },
-  { id: "comic-sans", name: "Comic Sans", fontFamily: "'Comic Sans MS', cursive" },
-  { id: "freestyle-script", name: "Freestyle Script", fontFamily: "'Freestyle Script', cursive" },
-  { id: "papyrus", name: "Papyrus", fontFamily: "Papyrus, fantasy" },
-  { id: "sitka", name: "Sitka", fontFamily: "Sitka, serif" },
-  { id: "times-new-roman", name: "Times New Roman", fontFamily: "'Times New Roman', serif" },
+  {
+    id: "arial",
+    name: "Arial",
+    fontFamily: "Arial, sans-serif",
+  },
+  {
+    id: "century",
+    name: "Century",
+    fontFamily: "Century, serif",
+  },
+  {
+    id: "comic-sans",
+    name: "Comic Sans",
+    fontFamily: '"Comic Sans MS", cursive',
+  },
+  {
+    id: "freestyle-script",
+    name: "Freestyle Script",
+    fontFamily: '"Freestyle Script", cursive',
+  },
+  {
+    id: "papyrus",
+    name: "Papyrus",
+    fontFamily: "Papyrus, fantasy",
+  },
+  {
+    id: "sitka",
+    name: "Sitka",
+    fontFamily: "Sitka, serif",
+  },
+  {
+    id: "times-new-roman",
+    name: "Times New Roman",
+    fontFamily: '"Times New Roman", serif',
+  },
 ];
 
 export default function EngravingSelector({
   engravingEnabled,
+  engravingType,
   engravingText,
   selectedEngravingFont,
   onToggleEngraving,
+  onChangeEngravingType,
   onChangeEngraving,
   onChangeEngravingFont,
 }) {
-  const maxCharacters = 25;
-  const previewText = engravingText || "Your Text";
-
-  function handleChange(e) {
-    const value = e.target.value.slice(0, maxCharacters);
-    onChangeEngraving(value);
-  }
+  const isStandardText = engravingType === "standard";
+  const isCustomSignature = engravingType === "customSignature";
 
   return (
-    <section style={{ marginBottom: "30px" }}>
-      <h2>Inside Engraving</h2>
+    <section
+      style={{
+        marginTop: "30px",
+        padding: "22px",
+        border: "1px solid rgba(255,255,255,0.12)",
+        borderRadius: "16px",
+        background: "rgba(255,255,255,0.03)",
+      }}
+    >
+      <h2 style={{ marginBottom: "14px" }}>✍️ Inside Engraving</h2>
 
       <button
+        type="button"
         onClick={onToggleEngraving}
         style={{
-          padding: "12px 18px",
-          borderRadius: "12px",
+          width: "100%",
+          padding: "14px",
+          borderRadius: "10px",
           border: engravingEnabled
-            ? "2px solid #d4af37"
-            : "1px solid rgba(255,255,255,.25)",
+            ? "2px solid #D4AF37"
+            : "1px solid rgba(255,255,255,0.2)",
           background: engravingEnabled
-            ? "rgba(212,175,55,.16)"
-            : "rgba(255,255,255,.05)",
-          color: "white",
+            ? "rgba(212,175,55,0.14)"
+            : "rgba(255,255,255,0.05)",
+          color: "inherit",
+          fontSize: "16px",
+          fontWeight: 700,
           cursor: "pointer",
-          marginBottom: "16px",
         }}
       >
-        {engravingEnabled ? "✓ " : ""}Add Inside Engraving (+$20)
+        {engravingEnabled
+          ? "✓ Add Inside Engraving"
+          : "Add Inside Engraving"}
       </button>
 
       {engravingEnabled && (
-        <div>
-          <input
-            type="text"
-            value={engravingText}
-            onChange={handleChange}
-            placeholder="Enter engraving text"
-            maxLength={maxCharacters}
-            style={{
-              width: "100%",
-              padding: "14px",
-              borderRadius: "12px",
-              border: "1px solid rgba(255,255,255,.25)",
-              background: "rgba(20,20,20,.95)",
-              color: "white",
-              fontSize: "16px",
-              marginBottom: "8px",
-            }}
-          />
-
-          <p
-            style={{
-              margin: 0,
-              opacity: 0.75,
-              color:
-                engravingText.length === maxCharacters ? "#d4af37" : "white",
-              marginBottom: "18px",
-            }}
-          >
-            {engravingText.length} / {maxCharacters} characters including spaces
-          </p>
-
-          <h3 style={{ marginBottom: "10px" }}>Choose Engraving Font</h3>
+        <>
+          <h3 style={{ marginTop: "24px", marginBottom: "12px" }}>
+            Choose Engraving Type
+          </h3>
 
           <div
             style={{
               display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+              gridTemplateColumns:
+                "repeat(auto-fit, minmax(240px, 1fr))",
               gap: "12px",
-              marginBottom: "20px",
+              marginBottom: "24px",
             }}
           >
-            {engravingFonts.map((font) => (
-              <button
-                key={font.id}
-                onClick={() => onChangeEngravingFont(font)}
-                style={{
-                  padding: "14px",
-                  borderRadius: "12px",
-                  border:
-                    selectedEngravingFont?.id === font.id
-                      ? "2px solid #d4af37"
-                      : "1px solid rgba(255,255,255,.25)",
-                  background:
-                    selectedEngravingFont?.id === font.id
-                      ? "rgba(212,175,55,.16)"
-                      : "rgba(255,255,255,.05)",
-                  color: "white",
-                  cursor: "pointer",
-                  textAlign: "left",
-                }}
-              >
-                <div
-                  style={{
-                    fontFamily: font.fontFamily,
-                    fontSize: "24px",
-                    marginBottom: "8px",
-                  }}
-                >
-                  {previewText}
-                </div>
-                <strong>{font.name}</strong>
-              </button>
-            ))}
-          </div>
-
-          <div
-            style={{
-              padding: "18px",
-              borderRadius: "14px",
-              border: "1px solid rgba(255,255,255,.25)",
-              background: "rgba(255,255,255,.04)",
-            }}
-          >
-            <p style={{ marginTop: 0, opacity: 0.75 }}>Engraving Preview</p>
-            <div
+            <button
+              type="button"
+              onClick={() => onChangeEngravingType("standard")}
               style={{
-                fontFamily:
-                  selectedEngravingFont?.fontFamily || "Arial, sans-serif",
-                fontSize: "32px",
+                padding: "16px",
+                borderRadius: "12px",
+                border: isStandardText
+                  ? "2px solid #D4AF37"
+                  : "1px solid rgba(255,255,255,.2)",
+                background: isStandardText
+                  ? "rgba(212,175,55,.14)"
+                  : "rgba(255,255,255,.04)",
+                color: "inherit",
+                cursor: "pointer",
+                textAlign: "left",
               }}
             >
-              {previewText}
-            </div>
+              <strong>Standard Text</strong>
+              <p
+                style={{
+                  marginTop: "8px",
+                  opacity: 0.75,
+                  fontSize: "14px",
+                }}
+              >
+                Choose a font and enter your engraving.
+                <br />
+                <strong>(+$20)</strong>
+              </p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                onChangeEngravingType("customSignature")
+              }
+              style={{
+                padding: "16px",
+                borderRadius: "12px",
+                border: isCustomSignature
+                  ? "2px solid #D4AF37"
+                  : "1px solid rgba(255,255,255,.2)",
+                background: isCustomSignature
+                  ? "rgba(212,175,55,.14)"
+                  : "rgba(255,255,255,.04)",
+                color: "inherit",
+                cursor: "pointer",
+                textAlign: "left",
+              }}
+            >
+              <strong>Handwritten Signature</strong>
+              <p
+                style={{
+                  marginTop: "8px",
+                  opacity: 0.75,
+                  fontSize: "14px",
+                }}
+              >
+                We will engrave your actual handwriting or signature.
+                <br />
+                <strong>(+$50)</strong>
+              </p>
+            </button>
           </div>
-        </div>
+
+          {isStandardText && (
+            <>
+              <h3>Enter Engraving</h3>
+
+              <input
+  type="text"
+  value={engravingText}
+  onChange={(e) => onChangeEngraving(e.target.value)}
+  placeholder="Enter engraving..."
+  maxLength={25}
+  style={{
+    width: "100%",
+    padding: "14px",
+    marginTop: "12px",
+    borderRadius: "10px",
+    border: "1px solid rgba(255,255,255,.2)",
+    background: "rgba(255,255,255,.05)",
+    color: "inherit",
+    fontSize: "20px",
+    fontFamily:
+      selectedEngravingFont?.fontFamily ||
+      "Arial, sans-serif",
+    transition: "font-family 0.2s ease",
+  }}
+/>
+
+              <p
+                style={{
+                  marginTop: "8px",
+                  opacity: 0.6,
+                  fontSize: "14px",
+                }}
+              >
+                {engravingText.length}/25 characters including spaces
+              </p>
+
+              <h3 style={{ marginTop: "24px" }}>
+                Choose Engraving Font
+              </h3>
+
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns:
+                    "repeat(auto-fit, minmax(180px,1fr))",
+                  gap: "12px",
+                  marginTop: "12px",
+                }}
+              >
+                {engravingFonts.map((font) => (
+                  <button
+                    key={font.id}
+                    type="button"
+                    onClick={() =>
+                      onChangeEngravingFont(font)
+                    }
+                    style={{
+                      padding: "16px",
+                      borderRadius: "10px",
+                      border:
+                        selectedEngravingFont?.id === font.id
+                          ? "2px solid #D4AF37"
+                          : "1px solid rgba(255,255,255,.2)",
+                      background:
+                        selectedEngravingFont?.id === font.id
+                          ? "rgba(212,175,55,.14)"
+                          : "rgba(255,255,255,.04)",
+                      color: "inherit",
+                      cursor: "pointer",
+                      fontFamily: font.fontFamily,
+                    }}
+                  >
+                    {font.name}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+
+          {isCustomSignature && (
+            <div
+              style={{
+                marginTop: "20px",
+                padding: "18px",
+                borderRadius: "12px",
+                background: "rgba(255,255,255,.05)",
+                lineHeight: 1.6,
+              }}
+            >
+              <h3>Handwritten Signature</h3>
+
+<p style={{ marginTop: "10px", lineHeight: 1.7 }}>
+  Please write your signature in a single horizontal line using a black pen on plain white paper.
+  After placing your order, simply send us a clear photo or email.
+</p>
+
+              <p>
+                Black ink on plain white paper produces the best
+                results.
+              </p>
+            </div>
+          )}
+        </>
       )}
     </section>
   );

@@ -64,8 +64,7 @@ export default function CheckoutSuccessPage() {
           </p>
 
           <p>
-            ✅ Once your memorial materials arrive, your handcrafted ring will
-            enter production.
+            ✅ Once your memorial materials arrive, your handcrafted memorial piece will enter production.
           </p>
 
           <p>

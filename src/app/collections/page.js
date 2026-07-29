@@ -1,7 +1,12 @@
 import Link from "next/link";
 import { collections } from "@/data/collections";
+import { keepsakeBranchCollection } from "@/data/collections/keepsake-branch/keepsake-branch-necklace/collection";
 
 export default function CollectionsPage() {
+  const allCollections = [
+  ...collections,
+  keepsakeBranchCollection,
+];
   return (
     <main
       style={{
@@ -30,8 +35,7 @@ export default function CollectionsPage() {
           lineHeight: 1.6,
         }}
       >
-        Choose a collection below and begin designing a one-of-a-kind memorial
-        ring handcrafted just for you.
+        Choose a collection below and begin designing a one-of-a-kind memorial piece handcrafted just for you.
       </p>
 
       <div
@@ -42,7 +46,7 @@ export default function CollectionsPage() {
           gap: "30px",
         }}
       >
-        {collections.map((collection) => (
+        {allCollections.map((collection) => (
           <Link
             key={collection.id}
             href={`/collections/${collection.slug}`}
@@ -61,17 +65,17 @@ export default function CollectionsPage() {
                 cursor: "pointer",
               }}
             >
-              <img
-                src={collection.heroImage}
-                alt={collection.name}
-                style={{
-                  width: "100%",
-                  height: "190px",
-                  objectFit: "cover",
-                  display: "block",
-                }}
-              />
-
+             <img
+  src={collection.heroImage}
+  alt={collection.name}
+  style={{
+    width: "100%",
+    height: "190px",
+    objectFit: "cover",
+    objectPosition: collection.cardImagePosition || "center",
+    display: "block",
+  }}
+/>
               <div style={{ padding: "20px" }}>
                 <h2
                   style={{
