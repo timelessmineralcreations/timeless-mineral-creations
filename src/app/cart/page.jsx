@@ -7,6 +7,7 @@ import { useCart } from "@/context/CartContext";
 export default function CartPage() {
   const { cart, removeItem, clearItems } = useCart();
   const [customerNote, setCustomerNote] = useState("");
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
   const subtotal = cart.reduce(
     (total, item) =>
       total + (Number(item.price) || 0) * (item.quantity || 1),
@@ -14,6 +15,9 @@ export default function CartPage() {
   );
 
   async function handleCheckout() {
+    if (isCheckingOut) return;
+    setIsCheckingOut(true);
+
     try {
       const response = await fetch("/api/checkout", {
         method: "POST",
@@ -32,10 +36,12 @@ export default function CartPage() {
         window.location.href = data.url;
       } else {
         alert(data.error || "Checkout failed.");
+        setIsCheckingOut(false);
       }
     } catch (error) {
       console.error("Checkout error:", error);
       alert("Something went wrong starting checkout.");
+      setIsCheckingOut(false);
     }
   }
 
@@ -296,6 +302,7 @@ export default function CartPage() {
 
             <button
               type="button"
+              disabled={isCheckingOut}
               onClick={handleCheckout}
               style={{
                 width: "100%",
@@ -307,10 +314,10 @@ export default function CartPage() {
                   "linear-gradient(135deg, rgb(233, 192, 84), rgb(184, 134, 11))",
                 color: "#111",
                 fontWeight: 800,
-                cursor: "pointer",
+                cursor: isCheckingOut ? "wait" : "pointer",
               }}
             >
-              Secure Checkout
+              {isCheckingOut ? "Starting Checkout..." : "Secure Checkout"}
             </button>
 
             <Link
