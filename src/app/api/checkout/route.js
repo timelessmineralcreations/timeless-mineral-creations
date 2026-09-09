@@ -1,8 +1,85 @@
 import Stripe from "stripe";
+import { checkoutRateLimit } from "@/lib/checkout-rate-limit";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export async function POST(request) {
+  /*
+   * CHECKOUT RATE LIMIT
+   *
+   * Limit: 10 checkout attempts per minute
+   * per IP address.
+   */
+  const forwardedFor =
+    request.headers.get(
+      "x-vercel-forwarded-for"
+    ) ||
+    request.headers.get(
+      "x-forwarded-for"
+    ) ||
+    "";
+
+  const clientIp =
+    forwardedFor
+      .split(",")[0]
+      .trim() ||
+    "unknown";
+
+  try {
+    const {
+      success,
+      limit,
+      remaining,
+      reset,
+    } =
+      await checkoutRateLimit.limit(
+        clientIp
+      );
+
+    if (!success) {
+      const retryAfter =
+        Math.max(
+          1,
+          Math.ceil(
+            (reset - Date.now()) /
+            1000
+          )
+        );
+
+      return Response.json(
+        {
+          error:
+            "Too many checkout attempts. Please wait a moment and try again.",
+        },
+        {
+          status: 429,
+
+          headers: {
+            "Retry-After":
+              String(retryAfter),
+
+            "X-RateLimit-Limit":
+              String(limit),
+
+            "X-RateLimit-Remaining":
+              String(remaining),
+          },
+        }
+      );
+    }
+  } catch (error) {
+    /*
+     * Fail open if Upstash is temporarily
+     * unavailable so a Redis outage cannot
+     * prevent a legitimate customer from
+     * checking out.
+     */
+    console.error(
+      "Checkout rate limiter unavailable:",
+      error
+    );
+  }
+
   try {
     const { cart, customerNote } = await request.json();
 

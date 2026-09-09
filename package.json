@@ -12,6 +12,8 @@
   "dependencies": {
     "@prisma/client": "^6.19.3",
     "@stripe/stripe-js": "^9.9.0",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.38.4",
     "@vercel/blob": "^2.6.1",
     "next": "16.2.9",
     "next-auth": "^5.0.0-beta.32",
