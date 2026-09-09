@@ -207,6 +207,29 @@ const accentStyleOptions = [
 ];
 
 export default function RemiConfigurator({ collection }) {
+  const [isMobileLayout, setIsMobileLayout] = useState(false);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 768px)");
+
+    const updateMobileLayout = () => {
+      setIsMobileLayout(mediaQuery.matches);
+    };
+
+    updateMobileLayout();
+
+    mediaQuery.addEventListener(
+      "change",
+      updateMobileLayout
+    );
+
+    return () => {
+      mediaQuery.removeEventListener(
+        "change",
+        updateMobileLayout
+      );
+    };
+  }, []);
   const { addItem } = useCart();
   const isNecklace = collection.productType === "necklace";
   const productLabel = isNecklace ? "Necklace" : "Ring";
@@ -672,9 +695,12 @@ const currentImage =
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "minmax(0, 1fr) 330px",
-gap: "24px",
-          alignItems: "start",
+          gridTemplateColumns: isMobileLayout
+              ? "minmax(0, 1fr)"
+              : "minmax(0, 1fr) 330px",
+            gap: isMobileLayout ? "24px" : "24px",
+            alignItems: "start",
+            minWidth: 0,
         }}
       >
         <section>
@@ -1348,11 +1374,20 @@ description="Select one natural mineral to complement your keepsake base. Your c
 
         <aside
           style={{
-            position: "sticky",
-            top: "110px",
-            maxHeight: "calc(100vh - 130px)",
-            overflowY: "auto",
-            scrollbarGutter: "stable",
+            position: isMobileLayout
+                ? "static"
+                : "sticky",
+              top: isMobileLayout
+                ? "auto"
+                : "110px",
+              minWidth: 0,
+              maxHeight: isMobileLayout
+                ? "none"
+                : "calc(100vh - 130px)",
+              overflowY: isMobileLayout
+                ? "visible"
+                : "auto",
+              scrollbarGutter: "stable",
             padding: "22px",
             borderRadius: "18px",
             border: "1px solid rgba(255,255,255,.18)",

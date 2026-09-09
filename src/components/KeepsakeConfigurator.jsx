@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useCart } from "@/context/CartContext";
 
 const birthstoneOptions = [
@@ -313,6 +313,29 @@ function getPriceForFinish(pricing, selectedFinishId, selectedCore) {
 }
 
 export default function KeepsakeConfigurator({ collection }) {
+  const [isMobileLayout, setIsMobileLayout] = useState(false);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 768px)");
+
+    const updateMobileLayout = () => {
+      setIsMobileLayout(mediaQuery.matches);
+    };
+
+    updateMobileLayout();
+
+    mediaQuery.addEventListener(
+      "change",
+      updateMobileLayout
+    );
+
+    return () => {
+      mediaQuery.removeEventListener(
+        "change",
+        updateMobileLayout
+      );
+    };
+  }, []);
   const { addItem } = useCart();
   const [addedToCart, setAddedToCart] = useState(false);
 
@@ -600,10 +623,12 @@ quantity: 1,
       <div
         style={{
           display: "grid",
-          gridTemplateColumns:
-            "minmax(0, 1fr) minmax(320px, 390px)",
-          gap: "34px",
-          alignItems: "start",
+          gridTemplateColumns: isMobileLayout
+              ? "minmax(0, 1fr)"
+              : "minmax(0, 1fr) minmax(320px, 390px)",
+            gap: isMobileLayout ? "24px" : "34px",
+            alignItems: "start",
+            minWidth: 0,
         }}
       >
         <section>
@@ -897,9 +922,14 @@ quantity: 1,
 
         <aside
           style={{
-            position: "sticky",
-            top: "110px",
-            padding: "22px",
+            position: isMobileLayout
+                ? "static"
+                : "sticky",
+              top: isMobileLayout
+                ? "auto"
+                : "110px",
+              minWidth: 0,
+              padding: "22px",
             borderRadius: "18px",
             border:
               "1px solid rgba(255,255,255,.18)",

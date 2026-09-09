@@ -27,6 +27,29 @@ import { accentMaterials } from "@/data/accentMaterials";
 import { birthstones } from "@/data/birthstones";
 
 function RingCollectionConfigurator({ collection }) {
+  const [isMobileLayout, setIsMobileLayout] = useState(false);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 768px)");
+
+    const updateMobileLayout = () => {
+      setIsMobileLayout(mediaQuery.matches);
+    };
+
+    updateMobileLayout();
+
+    mediaQuery.addEventListener(
+      "change",
+      updateMobileLayout
+    );
+
+    return () => {
+      mediaQuery.removeEventListener(
+        "change",
+        updateMobileLayout
+      );
+    };
+  }, []);
   const ringCores = collection.ringCores || [];
   const materials = [...new Set(ringCores.map((core) => core.material))];
 
@@ -385,9 +408,12 @@ selectedInlayStyle?.channels?.length > 0;
         width: "100%",
         maxWidth: "1080px",
         margin: "0 auto",
-        gridTemplateColumns: "minmax(0, 1fr) 300px",
-        gap: "18px",
-        alignItems: "start",
+        gridTemplateColumns: isMobileLayout
+            ? "minmax(0, 1fr)"
+            : "minmax(0, 1fr) 300px",
+          gap: isMobileLayout ? "24px" : "18px",
+          alignItems: "start",
+          minWidth: 0,
       }}
     >
       <section>
@@ -772,12 +798,22 @@ onClick={() => setSelectedKeepsakeMaterial("cremation")}
 
       <aside
         style={{
-          position: "sticky",
-          top: "96px",
-          alignSelf: "start",
-          maxHeight: "calc(100vh - 112px)",
-          overflowY: "auto",
-          paddingBottom: "14px",
+          position: isMobileLayout
+              ? "static"
+              : "sticky",
+            top: isMobileLayout
+              ? "auto"
+              : "96px",
+            alignSelf: "start",
+            width: "100%",
+            minWidth: 0,
+            maxHeight: isMobileLayout
+              ? "none"
+              : "calc(100vh - 112px)",
+            overflowY: isMobileLayout
+              ? "visible"
+              : "auto",
+            paddingBottom: "14px",
         }}
       >
         <SummaryCard
