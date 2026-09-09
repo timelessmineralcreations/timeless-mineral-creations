@@ -257,6 +257,7 @@ export async function updateCollection(formData) {
   });
 
   revalidatePath("/admin/collections");
+  revalidatePath("/collections");
   revalidatePath(`/admin/collections/${id}`);
   revalidatePath(`/collections/${slug}`);
 
