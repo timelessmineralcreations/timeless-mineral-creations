@@ -1,6 +1,43 @@
+"use client";
+
+import { useEffect, useRef } from "react";
 import Link from "next/link";
+import { useCart } from "@/context/CartContext";
 
 export default function CheckoutSuccessPage() {
+  const { clearItems } = useCart();
+
+  const didClearCart =
+    useRef(false);
+
+  useEffect(() => {
+    if (didClearCart.current) {
+      return;
+    }
+
+    const params =
+      new URLSearchParams(
+        window.location.search
+      );
+
+    const sessionId =
+      params.get("session_id");
+
+    if (!sessionId) {
+      return;
+    }
+
+    didClearCart.current = true;
+
+    clearItems();
+
+    window.history.replaceState(
+      {},
+      "",
+      "/checkout/success"
+    );
+  }, [clearItems]);
+
   return (
     <main
       style={{

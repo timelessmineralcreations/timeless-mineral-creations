@@ -240,7 +240,7 @@ quantity: item.quantity || 1,
         metadata: {
   customerNote: String(customerNote || "").slice(0, 500),
 },
-        success_url: `${origin}/checkout/success`,
+        success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${origin}/cart`,
       });
 
