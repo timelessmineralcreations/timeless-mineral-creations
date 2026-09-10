@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
 
+import { prisma } from "@/lib/prisma";
+
 import CollectionConfigurator from "@/components/CollectionConfigurator";
 import KeepsakeConfigurator from "@/components/KeepsakeConfigurator";
 
@@ -111,6 +113,92 @@ export default async function CollectionPage({ params }) {
     notFound();
   }
 
+  const databaseCollection =
+    await prisma.collection.findFirst({
+      where: {
+        slug,
+      },
+      select: {
+        galleryItems: {
+          where: {
+            active: true,
+          },
+          orderBy: [
+            { featured: "desc" },
+            { sortOrder: "asc" },
+            { createdAt: "asc" },
+          ],
+          select: {
+            id: true,
+            title: true,
+            description: true,
+            imageUrl: true,
+            altText: true,
+            featured: true,
+            sortOrder: true,
+            images: {
+              orderBy: [
+                { primary: "desc" },
+                { sortOrder: "asc" },
+                { createdAt: "asc" },
+              ],
+              select: {
+                imageUrl: true,
+                altText: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+  const galleryPhotos =
+    (databaseCollection?.galleryItems || [])
+      .map((item) => {
+        const galleryImage =
+          item.imageUrl ||
+          item.images?.[0]?.imageUrl ||
+          null;
+
+        if (!galleryImage) {
+          return null;
+        }
+
+        return {
+          id: `gallery-${item.id}`,
+          image: galleryImage,
+          imageUrl: galleryImage,
+          altText:
+            item.altText ||
+            item.images?.[0]?.altText ||
+            item.title ||
+            "",
+          caption:
+            item.description ||
+            item.title ||
+            "",
+          featured: item.featured,
+          sortOrder: item.sortOrder,
+        };
+      })
+      .filter(Boolean);
+
+  const collectionWithGallery = {
+    ...collection,
+    ringPhotos: [
+      ...(collection.ringPhotos || []),
+      ...galleryPhotos,
+    ],
+    pendantPhotos: [
+      ...(collection.pendantPhotos || []),
+      ...galleryPhotos,
+    ],
+    photos: [
+      ...(collection.photos || []),
+      ...galleryPhotos,
+    ],
+  };
+
   const usesKeepsakeConfigurator =
     collection.category === "keepsake" ||
     keepsakeBuilders.includes(collection.builder);
@@ -124,11 +212,11 @@ export default async function CollectionPage({ params }) {
       }}
     >
       {collection.builder === "remi" ? (
-  <RemiConfigurator collection={collection} />
+  <RemiConfigurator collection={collectionWithGallery} />
 ) : usesKeepsakeConfigurator ? (
-  <KeepsakeConfigurator collection={collection} />
+  <KeepsakeConfigurator collection={collectionWithGallery} />
 ) : (
-  <CollectionConfigurator collection={collection} />
+  <CollectionConfigurator collection={collectionWithGallery} />
 )}  
     </main>
   );
