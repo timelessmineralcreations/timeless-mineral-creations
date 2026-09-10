@@ -927,6 +927,8 @@ export async function updateCollection(formData) {
     }
   );
 
+  revalidatePath("/collections");
+
   revalidatePath(
     "/admin/collections"
   );
@@ -1070,6 +1072,8 @@ function revalidateCollectionPhotoPaths({
   revalidatePath(
     "/admin/collections"
   );
+
+  revalidatePath("/collections");
 
   if (slug) {
     revalidatePath(

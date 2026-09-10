@@ -14,6 +14,8 @@ export default function CancelOrderActions({
     cancellationReason || ""
   );
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteText, setDeleteText] = useState("");
   const [error, setError] = useState("");
 
   const isCancelled = Boolean(cancelledAt);
@@ -66,6 +68,57 @@ export default function CancelOrderActions({
       setError(error.message);
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function permanentlyDeleteOrder() {
+    if (deleteText.trim() !== "DELETE") {
+      setError('Type "DELETE" to confirm permanent deletion.');
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "Permanently delete this order?\n\nThis cannot be undone. It will not refund Stripe or void an EasyPost label."
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setDeleting(true);
+    setError("");
+
+    try {
+      const response = await fetch(
+        `/api/admin/orders/${orderId}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            confirmText: "DELETE",
+            confirmOrderId: orderId,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error ||
+            "Unable to permanently delete the order."
+        );
+      }
+
+      router.push("/admin/orders");
+      router.refresh();
+    } catch (error) {
+      console.error("Permanent order deletion failed:", error);
+      setError(error.message);
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -168,6 +221,89 @@ export default function CancelOrderActions({
           </button>
         </>
       )}
+
+      <div
+        style={{
+          marginTop: "24px",
+          paddingTop: "22px",
+          borderTop: "1px solid rgba(239,68,68,.35)",
+        }}
+      >
+        <h3
+          style={{
+            margin: "0 0 8px",
+            color: "#fca5a5",
+            fontSize: "1rem",
+          }}
+        >
+          Delete Practice / Test Order
+        </h3>
+
+        <p
+          style={{
+            margin: "0 0 14px",
+            color: "#a3a3a3",
+            fontSize: "0.86rem",
+            lineHeight: 1.55,
+          }}
+        >
+          Permanently deletes this order from the website.
+          This cannot be undone. It does not refund Stripe
+          and does not void an EasyPost shipping label.
+        </p>
+
+        <label>
+          <div style={fieldLabel}>
+            Type DELETE to confirm
+          </div>
+
+          <input
+            type="text"
+            value={deleteText}
+            onChange={(event) =>
+              setDeleteText(event.target.value)
+            }
+            placeholder="DELETE"
+            disabled={saving || deleting}
+            autoComplete="off"
+            style={{
+              width: "100%",
+              boxSizing: "border-box",
+              padding: "12px",
+              borderRadius: "10px",
+              border: "1px solid #444",
+              background: "#121212",
+              color: "#fff",
+              fontSize: "15px",
+              fontFamily: "inherit",
+            }}
+          />
+        </label>
+
+        <button
+          type="button"
+          onClick={permanentlyDeleteOrder}
+          disabled={
+            saving ||
+            deleting ||
+            deleteText.trim() !== "DELETE"
+          }
+          style={{
+            ...dangerButton,
+            marginTop: "12px",
+            opacity:
+              saving ||
+              deleting ||
+              deleteText.trim() !== "DELETE"
+                ? 0.5
+                : 1,
+          }}
+        >
+          {deleting
+            ? "Deleting..."
+            : "Permanently Delete Order"}
+        </button>
+      </div>
 
       {error ? (
         <div

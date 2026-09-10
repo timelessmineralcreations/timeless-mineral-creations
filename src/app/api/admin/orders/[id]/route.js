@@ -1,3 +1,4 @@
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
@@ -21,6 +22,22 @@ function cleanOptionalString(value) {
 
   const cleanedValue = value.trim();
   return cleanedValue || null;
+}
+
+async function isAuthorizedAdmin() {
+  const session = await auth();
+
+  const sessionEmail =
+    session?.user?.email?.toLowerCase();
+
+  const adminEmail =
+    process.env.ADMIN_EMAIL?.toLowerCase();
+
+  return Boolean(
+    sessionEmail &&
+      adminEmail &&
+      sessionEmail === adminEmail
+  );
 }
 
 export async function PATCH(request, { params }) {
@@ -261,6 +278,84 @@ if (body.cancelOrder === false) {
 
     return Response.json(
       { error: "Unable to update the order." },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  request,
+  { params }
+) {
+  try {
+    const authorized =
+      await isAuthorizedAdmin();
+
+    if (!authorized) {
+      return Response.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    const { id } = await params;
+
+    let body = {};
+
+    try {
+      body = await request.json();
+    } catch {
+      body = {};
+    }
+
+    if (
+      body.confirmText !== "DELETE" ||
+      body.confirmOrderId !== id
+    ) {
+      return Response.json(
+        {
+          error:
+            "Permanent deletion was not confirmed.",
+        },
+        { status: 400 }
+      );
+    }
+
+    const existingOrder =
+      await prisma.order.findUnique({
+        where: { id },
+
+        select: {
+          id: true,
+        },
+      });
+
+    if (!existingOrder) {
+      return Response.json(
+        { error: "Order not found." },
+        { status: 404 }
+      );
+    }
+
+    await prisma.order.delete({
+      where: { id },
+    });
+
+    return Response.json({
+      success: true,
+      deletedOrderId: id,
+    });
+  } catch (error) {
+    console.error(
+      "Failed to delete order:",
+      error
+    );
+
+    return Response.json(
+      {
+        error:
+          "Unable to permanently delete the order.",
+      },
       { status: 500 }
     );
   }

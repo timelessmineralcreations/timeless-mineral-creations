@@ -119,6 +119,36 @@ export default async function CollectionPage({ params }) {
         slug,
       },
       select: {
+        published: true,
+        comingSoon: true,
+        photos: {
+          where: {
+            active: true,
+          },
+          orderBy: [
+            { featured: "desc" },
+            { sortOrder: "asc" },
+            { createdAt: "asc" },
+          ],
+          select: {
+            id: true,
+            imageUrl: true,
+            altText: true,
+            caption: true,
+            material: true,
+            finish: true,
+            coreId: true,
+            widthMm: true,
+            inlayStyleId: true,
+            mineralIdsJson: true,
+            memorialMaterialIdsJson: true,
+            accentMaterialIdsJson: true,
+            glowPowderIdsJson: true,
+            tagsJson: true,
+            featured: true,
+            sortOrder: true,
+          },
+        },
         galleryItems: {
           where: {
             active: true,
@@ -152,6 +182,85 @@ export default async function CollectionPage({ params }) {
       },
     });
 
+  if (
+    !databaseCollection ||
+    (!databaseCollection.published &&
+      !databaseCollection.comingSoon)
+  ) {
+    notFound();
+  }
+
+  const parsePhotoJsonArray = (value) => {
+    if (!value) {
+      return [];
+    }
+
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed)
+        ? parsed.map(String)
+        : [];
+    } catch {
+      return [];
+    }
+  };
+
+  const adminPhotos =
+    databaseCollection.photos.map((photo) => {
+      const mineralIds =
+        parsePhotoJsonArray(photo.mineralIdsJson);
+
+      const memorialMaterialIds =
+        parsePhotoJsonArray(
+          photo.memorialMaterialIdsJson
+        );
+
+      const accentMaterialIds =
+        parsePhotoJsonArray(
+          photo.accentMaterialIdsJson
+        );
+
+      const glowPowderIds =
+        parsePhotoJsonArray(
+          photo.glowPowderIdsJson
+        );
+
+      const tags =
+        parsePhotoJsonArray(photo.tagsJson);
+
+      return {
+        id: photo.id,
+        image: photo.imageUrl,
+        imageUrl: photo.imageUrl,
+        altText: photo.altText || "",
+        caption: photo.caption || "",
+        material: photo.material || null,
+        finish: photo.finish || null,
+        coreId: photo.coreId || null,
+        width: photo.widthMm ?? null,
+        widthMm: photo.widthMm ?? null,
+        inlayStyleId: photo.inlayStyleId || null,
+        mineral: mineralIds[0] || null,
+        minerals: mineralIds,
+        mineralIds,
+        keepsakeMaterial:
+          memorialMaterialIds[0] || null,
+        memorialMaterials:
+          memorialMaterialIds,
+        accentMaterials:
+          accentMaterialIds,
+        glow: glowPowderIds[0] || null,
+        glowPowders: glowPowderIds,
+        tags,
+        hair:
+          memorialMaterialIds.includes("hair") ||
+          tags.includes("hair"),
+        featured: photo.featured,
+        active: true,
+        sortOrder: photo.sortOrder,
+      };
+    });
+
   const galleryPhotos =
     (databaseCollection?.galleryItems || [])
       .map((item) => {
@@ -183,21 +292,64 @@ export default async function CollectionPage({ params }) {
       })
       .filter(Boolean);
 
+  const customerPhotos = [
+    ...adminPhotos,
+    ...galleryPhotos,
+  ].filter(
+    (photo, index, photos) =>
+      photos.findIndex(
+        (candidate) =>
+          candidate.imageUrl === photo.imageUrl
+      ) === index
+  );
+
+  const hasAdminPhotos =
+    customerPhotos.length > 0;
+
   const collectionWithGallery = {
     ...collection,
-    ringPhotos: [
-      ...(collection.ringPhotos || []),
-      ...galleryPhotos,
-    ],
-    pendantPhotos: [
-      ...(collection.pendantPhotos || []),
-      ...galleryPhotos,
-    ],
-    photos: [
-      ...(collection.photos || []),
-      ...galleryPhotos,
-    ],
+    published: databaseCollection.published,
+    comingSoon: databaseCollection.comingSoon,
+    ringPhotos: hasAdminPhotos
+      ? customerPhotos
+      : collection.ringPhotos || [],
+    pendantPhotos: hasAdminPhotos
+      ? customerPhotos
+      : collection.pendantPhotos || [],
+    photos: hasAdminPhotos
+      ? customerPhotos
+      : collection.photos || [],
   };
+
+  if (databaseCollection.comingSoon) {
+    return (
+      <main
+        style={{
+          maxWidth: "900px",
+          margin: "0 auto",
+          padding: "80px 20px",
+          textAlign: "center",
+        }}
+      >
+        <h1 style={{ marginBottom: "16px" }}>
+          {collection.name}
+        </h1>
+
+        <p
+          style={{
+            margin: "0 auto",
+            maxWidth: "620px",
+            fontSize: "18px",
+            lineHeight: 1.7,
+            opacity: 0.78,
+          }}
+        >
+          This collection is coming soon and is not
+          available to order yet.
+        </p>
+      </main>
+    );
+  }
 
   const usesKeepsakeConfigurator =
     collection.category === "keepsake" ||
