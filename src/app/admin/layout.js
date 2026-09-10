@@ -25,8 +25,8 @@ const navItems = [
     icon: "◉",
   },
   {
-    label: "Ring Cores",
-    href: "/admin/ring-cores",
+    label: "Product Bases",
+    href: "/admin/product-bases",
     icon: "⬡",
   },
   {
@@ -43,6 +43,46 @@ const navItems = [
     label: "Glow Powders",
     href: "/admin/glow-powders",
     icon: "✦",
+  },
+  {
+    label: "Birthstones",
+    href: "/admin/birthstones-catalog",
+    icon: "◇",
+  },
+  {
+    label: "Hair Placement",
+    href: "/admin/hair-placement",
+    icon: "〰",
+  },
+  {
+    label: "Decorative Accents",
+    href: "/admin/decorative-accents",
+    icon: "✧",
+  },
+  {
+    label: "Accent Styles",
+    href: "/admin/accent-styles",
+    icon: "◐",
+  },
+  {
+    label: "Engraving Options",
+    href: "/admin/engraving-options",
+    icon: "✎",
+  },
+  {
+    label: "Bezel Sizes",
+    href: "/admin/bezel-sizes",
+    icon: "◌",
+  },
+  {
+    label: "Chain Options",
+    href: "/admin/chain-options",
+    icon: "⌁",
+  },
+  {
+    label: "Memorial Materials",
+    href: "/admin/memorial-materials",
+    icon: "◍",
   },
   {
     label: "Gallery",
