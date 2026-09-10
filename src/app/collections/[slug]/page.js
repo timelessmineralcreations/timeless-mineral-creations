@@ -121,6 +121,7 @@ export default async function CollectionPage({ params }) {
       select: {
         published: true,
         comingSoon: true,
+        heroImage: true,
         photos: {
           where: {
             active: true,
@@ -304,6 +305,11 @@ export default async function CollectionPage({ params }) {
     ...collection,
     published: databaseCollection.published,
     comingSoon: databaseCollection.comingSoon,
+    heroImage:
+      databaseCollection.heroImage ||
+      customerPhotos[0]?.imageUrl ||
+      customerPhotos[0]?.image ||
+      collection.heroImage,
     ringPhotos: hasAdminPhotos
       ? customerPhotos
       : collection.ringPhotos || [],
