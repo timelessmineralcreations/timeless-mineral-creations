@@ -292,16 +292,10 @@ export default async function CollectionPage({ params }) {
       })
       .filter(Boolean);
 
-  const customerPhotos = [
-    ...adminPhotos,
-    ...galleryPhotos,
-  ].filter(
-    (photo, index, photos) =>
-      photos.findIndex(
-        (candidate) =>
-          candidate.imageUrl === photo.imageUrl
-      ) === index
-  );
+  const customerPhotos =
+    adminPhotos.length > 0
+      ? adminPhotos
+      : galleryPhotos;
 
   const hasAdminPhotos =
     customerPhotos.length > 0;
