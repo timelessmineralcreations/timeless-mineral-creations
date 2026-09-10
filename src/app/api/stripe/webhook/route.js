@@ -1,4 +1,5 @@
 import Stripe from "stripe";
+import { Resend } from "resend";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
@@ -75,6 +76,104 @@ function getMetadataValue(metadata, configuration, possibleKeys) {
   return null;
 }
 
+async function sendOrderConfirmationEmail(order) {
+  const apiKey = String(
+    process.env.RESEND_API_KEY || ""
+  ).trim();
+
+  if (!apiKey) {
+    console.error(
+      "RESEND_API_KEY is missing. Order confirmation email was not sent."
+    );
+    return false;
+  }
+
+  if (!order?.customerEmail) {
+    console.warn(
+      `Order ${order?.id || "unknown"} has no customer email address.`
+    );
+    return false;
+  }
+
+  if (order.confirmationEmailSentAt) {
+    return true;
+  }
+
+  const resend = new Resend(apiKey);
+
+  const fromEmail =
+    String(
+      process.env.RESEND_FROM_EMAIL || ""
+    ).trim() ||
+    "Timeless Mineral Creations <onboarding@resend.dev>";
+
+  const total = Number(
+    order.totalPrice || 0
+  ).toFixed(2);
+
+  const result =
+    await resend.emails.send(
+      {
+        from: fromEmail,
+        to: [order.customerEmail],
+        subject:
+          "Order Confirmed - Timeless Mineral Creations",
+        text:
+          `Thank you for your order with Timeless Mineral Creations.
+
+Your payment has been received successfully.
+
+Order total: $${total}
+
+Your order is now awaiting your memorial materials. We will keep you updated as your order moves through production.
+
+Thank you for trusting Timeless Mineral Creations with something so meaningful.`,
+        html:
+          `<div style="font-family:Arial,sans-serif;line-height:1.6;color:#222;max-width:620px;margin:0 auto;">
+            <h2>Thank You For Your Order</h2>
+            <p>Thank you for choosing Timeless Mineral Creations.</p>
+            <p>Your payment has been received successfully.</p>
+            <p><strong>Order total: $${total}</strong></p>
+            <p>Your order is now awaiting your memorial materials. We will keep you updated as your order moves through production.</p>
+            <p>Thank you for trusting Timeless Mineral Creations with something so meaningful.</p>
+          </div>`,
+      },
+      {
+        idempotencyKey:
+          `order-confirmation/${order.id}`,
+      }
+    );
+
+  if (result.error) {
+    throw new Error(
+      result.error.message ||
+        "Resend failed to send the confirmation email."
+    );
+  }
+
+  await prisma.order.update({
+    where: {
+      id: order.id,
+    },
+    data: {
+      confirmationEmailSentAt:
+        new Date(),
+    },
+  });
+
+  console.log(
+    "Customer confirmation email sent:",
+    {
+      orderId: order.id,
+      customerEmail:
+        order.customerEmail,
+      resendEmailId:
+        result.data?.id || null,
+    }
+  );
+
+  return true;
+}
 export async function POST(request) {
   const body = await request.text();
   const signature = request.headers.get("stripe-signature");
@@ -404,6 +503,17 @@ export async function POST(request) {
           totalPrice: order.totalPrice,
           itemCount: order.items.length,
         });
+
+        try {
+          await sendOrderConfirmationEmail(
+            order
+          );
+        } catch (emailError) {
+          console.error(
+            "Order was saved, but confirmation email failed:",
+            emailError
+          );
+        }
 
         break;
       }
