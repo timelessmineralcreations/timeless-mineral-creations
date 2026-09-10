@@ -40,9 +40,13 @@ model Order {
   taxAmount    Float?
   totalPrice   Float
 
-  status        String  @default("Awaiting Memorial Materials")
+  status        String @default("Awaiting Memorial Materials")
   customerNote  String?
   internalNotes String?
+
+  // Customer emails
+confirmationEmailSentAt DateTime?
+shippingEmailSentAt     DateTime?
 
   // Production checklist
   coreConfirmedAt      DateTime?
@@ -55,11 +59,11 @@ model Order {
   packagedAt           DateTime?
 
   // Incoming package from the customer
-  incomingCarrier        String?
-  incomingTrackingNumber String?
-  incomingTrackingStatus String?
-  incomingEstimatedDate  DateTime?
-  incomingDeliveredAt    DateTime?
+  incomingCarrier         String?
+  incomingTrackingNumber  String?
+  incomingTrackingStatus  String?
+  incomingEstimatedDate   DateTime?
+  incomingDeliveredAt     DateTime?
 
   // Memorial materials intake
   materialsReceivedAt DateTime?
@@ -85,12 +89,12 @@ model OrderItem {
   createdAt DateTime @default(now())
 
   orderId String
-  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order   Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   productType    String?
   productName    String?
   collectionName String
-  quantity       Int     @default(1)
+  quantity       Int    @default(1)
   unitPrice      Float
 
   material String?
@@ -114,7 +118,7 @@ model Refund {
   createdAt DateTime @default(now())
 
   orderId String
-  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order   Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   stripeRefundId String @unique
 
@@ -139,8 +143,23 @@ model Collection {
   heroImage String?
   cardImage String?
 
+  // Collection card image positioning
+  cardImageScale Float @default(1)
+  cardImageX     Float @default(0)
+  cardImageY     Float @default(0)
+
+  // Collection hero image positioning
+  heroImageScale Float @default(1)
+  heroImageX     Float @default(0)
+  heroImageY     Float @default(0)
+
   // Pricing
   startingPrice Float @default(0)
+
+  // Complete imported pricing object from existing
+  // src/data/collections files.
+  pricingJson      String?
+  pricingUpdatedAt DateTime?
 
   // Store organization
   productType String @default("Ring")
@@ -159,9 +178,19 @@ model Collection {
   seoDescription String?
 
   photos            CollectionPhoto[]
+  galleryItems      GalleryItem[]
+  reviews           Review[]
   ringCores         CollectionRingCore[]
+  productBases      CollectionProductBase[]
   inlayStyles       CollectionInlayStyle[]
   birthstoneOptions CollectionBirthstoneOption[]
+
+  minerals    CollectionMineral[]
+  glowPowders CollectionGlowPowder[]
+  birthstones CollectionBirthstone[]
+
+  pricingProfile CollectionPricingProfile?
+  pricingRules   CollectionPricingRule[]
 }
 
 model CollectionPhoto {
@@ -169,16 +198,40 @@ model CollectionPhoto {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // The collection this photo belongs to
   collectionId String
   collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
 
+  // Uploaded image
   imageUrl String
+  altText  String?
+  caption  String?
 
-  altText String?
-  caption String?
+  // Used to match the photo to configurator selections
+  material     String?
+  finish       String?
+  coreId       String?
+  widthMm      Float?
+  inlayStyleId String?
 
+  // Flexible selection tags stored as JSON arrays
+  mineralIdsJson          String?
+  memorialMaterialIdsJson String?
+  accentMaterialIdsJson   String?
+  glowPowderIdsJson       String?
+
+  // Optional searchable labels
+  tagsJson String?
+
+  // Display controls
   sortOrder Int     @default(0)
   featured  Boolean @default(false)
+  active    Boolean @default(true)
+
+  @@index([collectionId, active, sortOrder])
+  @@index([collectionId, material])
+  @@index([collectionId, coreId])
+  @@index([collectionId, widthMm])
 }
 
 model RingCore {
@@ -203,9 +256,10 @@ model RingCore {
 
   imageUrl String?
 
-  active      Boolean              @default(true)
-  featured    Boolean              @default(false)
-  sortOrder   Int                  @default(0)
+  active    Boolean @default(true)
+  featured  Boolean @default(false)
+  sortOrder Int     @default(0)
+
   collections CollectionRingCore[]
 }
 
@@ -225,20 +279,182 @@ model CollectionRingCore {
   @@unique([collectionId, ringCoreId])
 }
 
+model Supplier {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name String
+  slug String @unique
+
+  websiteUrl   String?
+  contactName  String?
+  contactEmail String?
+  contactPhone String?
+
+  shippingNotes String?
+  internalNotes String?
+
+  active    Boolean @default(true)
+  sortOrder Int     @default(0)
+
+  productBases ProductBase[]
+}
+
+model ProductBase {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Original JavaScript ID, used as the stable catalog slug.
+  slug String @unique
+
+  name        String
+  description String?
+  notes       String?
+
+  // Examples:
+  // channel-ring
+  // bezel-ring
+  // bracelet
+  // necklace
+  // pendant
+  productType String
+
+  material String?
+  finish   String?
+  color    String?
+  style    String?
+  edge     String?
+
+  comfortFit Boolean?
+
+  // Controls whether this Product Base can offer inside engraving.
+  allowEngraving Boolean @default(false)
+
+  imageUrl String?
+
+  supplierId String?
+  supplier   Supplier? @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+
+  supplierModel String?
+  supplierSku   String?
+  supplierUrl   String?
+
+  supplierCostCents          Int @default(0)
+  estimatedShippingCostCents Int @default(0)
+  landedCostCents            Int @default(0)
+
+  // Product-specific information, such as:
+  // setting shape, setting quantity, stone size,
+  // birthstone type, pendant dimensions, etc.
+  attributesJson String?
+
+  active    Boolean @default(true)
+  featured  Boolean @default(false)
+  sortOrder Int     @default(0)
+
+  variants    ProductVariant[]
+  collections CollectionProductBase[]
+
+  @@index([productType, active, sortOrder])
+  @@index([supplierId])
+}
+
+model ProductVariant {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  productBaseId String
+  productBase   ProductBase @relation(fields: [productBaseId], references: [id], onDelete: Cascade)
+
+  // Stable identifier within one Product Base.
+  // Examples:
+  // width-8-channel-4
+  // white-gold-6x8-pendant-only
+  // default
+  variantKey String
+
+  name String?
+
+  widthMm        Float?
+  channelWidthMm Float?
+  channelLayout  String?
+
+  finish       String?
+  bezelSize    String?
+  chainOption  String?
+  lengthOption String?
+
+  // Flexible option storage during migration.
+  sizesJson        String?
+  finishesJson     String?
+  bezelSizesJson   String?
+  chainOptionsJson String?
+  lengthsJson      String?
+  channelsJson     String?
+  attributesJson   String?
+
+  supplierCostOverrideCents Int?
+  priceAdjustmentCents      Int @default(0)
+
+  inventoryQuantity Int @default(0)
+  lowStockThreshold Int @default(2)
+
+  inStock Boolean @default(true)
+  active  Boolean @default(true)
+
+  sortOrder Int @default(0)
+
+  @@unique([productBaseId, variantKey])
+  @@index([productBaseId, active, sortOrder])
+}
+
+model CollectionProductBase {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  collectionId String
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  productBaseId String
+  productBase   ProductBase @relation(fields: [productBaseId], references: [id], onDelete: Cascade)
+
+  // Optional collection-specific naming or configuration.
+  displayName       String?
+  configurationJson String?
+
+  defaultSelected Boolean @default(false)
+  active          Boolean @default(true)
+  sortOrder       Int     @default(0)
+
+  @@unique([collectionId, productBaseId])
+  @@index([collectionId, active, sortOrder])
+  @@index([productBaseId])
+}
+
 model InlayStyle {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  name        String
-  slug        String  @unique
-  description String?
+  name String
+  slug String @unique
+
+  shortDescription String?
+  description      String?
 
   imageUrl String?
 
-  active    Boolean @default(true)
-  featured  Boolean @default(false)
-  sortOrder Int     @default(0)
+  featured Boolean @default(false)
+  active   Boolean @default(true)
+
+  sortOrder Int @default(0)
+
+  // Everything else from the JS object
+  configurationJson String?
 
   collections CollectionInlayStyle[]
 }
@@ -259,23 +475,80 @@ model CollectionInlayStyle {
   @@unique([collectionId, inlayStyleId])
 }
 
+model CollectionMineral {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  collectionId String
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  mineralId String
+  mineral   Mineral @relation(fields: [mineralId], references: [id], onDelete: Cascade)
+
+  sortOrder Int     @default(0)
+  active    Boolean @default(true)
+
+  @@unique([collectionId, mineralId])
+}
+
+model CollectionGlowPowder {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  collectionId String
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  glowPowderId String
+  glowPowder   GlowPowder @relation(fields: [glowPowderId], references: [id], onDelete: Cascade)
+
+  sortOrder Int     @default(0)
+  active    Boolean @default(true)
+
+  @@unique([collectionId, glowPowderId])
+}
+
+model CollectionBirthstone {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  collectionId String
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  birthstoneId String
+  birthstone   Birthstone @relation(fields: [birthstoneId], references: [id], onDelete: Cascade)
+
+  sortOrder Int     @default(0)
+  active    Boolean @default(true)
+
+  @@unique([collectionId, birthstoneId])
+}
+
 model Mineral {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   name        String
-  slug        String  @unique
+  slug        String @unique
   description String?
+
+  category String?
 
   imageUrl String?
   colorHex String?
+
+  // Customer price adjustment stored in cents.
+  priceAdjustmentCents Int @default(0)
+
+  premium Boolean @default(false)
+  popular Boolean @default(false)
 
   active    Boolean @default(true)
   featured  Boolean @default(false)
   sortOrder Int     @default(0)
 
   birthstoneOptions CollectionBirthstoneOption[]
+  collections       CollectionMineral[]
 }
 
 model BirthstoneMonth {
@@ -312,4 +585,308 @@ model CollectionBirthstoneOption {
   sortOrder            Int     @default(0)
 
   @@unique([collectionId, birthstoneMonthId, mineralId])
+}
+
+model Birthstone {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name        String
+  slug        String @unique
+  description String?
+
+  monthName   String
+  monthNumber Int
+
+  stoneType String @default("CZ")
+  colorName String?
+  colorHex  String?
+
+  shape String?
+  size  String?
+
+  imageUrl String?
+
+  supplier    String?
+  supplierUrl String?
+
+  supplierCostCents    Int @default(0)
+  priceAdjustmentCents Int @default(0)
+
+  active    Boolean @default(true)
+  featured  Boolean @default(false)
+  sortOrder Int     @default(0)
+
+  collections CollectionBirthstone[]
+
+  @@unique([monthNumber, name])
+}
+
+model GlowPowder {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  name        String
+  slug        String @unique
+  description String?
+
+  imageUrl String?
+
+  daytimeColorHex String?
+  glowColorHex    String?
+
+  brightnessLevel String?
+  glowDuration    String?
+
+  priceAdjustmentCents Int @default(1500)
+
+  active    Boolean @default(true)
+  featured  Boolean @default(false)
+  sortOrder Int     @default(0)
+
+  collections CollectionGlowPowder[]
+}
+
+model GalleryItem {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  title       String
+  description String?
+
+  imageUrl String?
+  altText  String?
+
+  instagramUrl String?
+
+  featured         Boolean @default(false)
+  homepageFeatured Boolean @default(false)
+  active           Boolean @default(true)
+
+  sortOrder Int @default(0)
+
+  collectionId String?
+  collection   Collection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+
+  images  GalleryImage[]
+  reviews Review[]
+}
+
+model GalleryImage {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  galleryItemId String
+  galleryItem   GalleryItem @relation(fields: [galleryItemId], references: [id], onDelete: Cascade)
+
+  imageUrl String
+  altText  String?
+  caption  String?
+
+  sortOrder Int     @default(0)
+  primary   Boolean @default(false)
+
+  @@index([galleryItemId])
+  @@index([galleryItemId, sortOrder])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  customerName     String
+  customerLocation String?
+
+  rating Int @default(5)
+
+  title String?
+  body  String
+
+  ownerResponse String?
+
+  reviewDate DateTime @default(now())
+
+  approved         Boolean @default(false)
+  verified         Boolean @default(false)
+  featured         Boolean @default(false)
+  homepageFeatured Boolean @default(false)
+
+  sortOrder Int @default(0)
+
+  collectionId String?
+  collection   Collection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+
+  galleryItemId String?
+  galleryItem   GalleryItem? @relation(fields: [galleryItemId], references: [id], onDelete: SetNull)
+
+  images ReviewImage[]
+
+  @@index([approved, sortOrder])
+  @@index([homepageFeatured, sortOrder])
+  @@index([collectionId])
+  @@index([galleryItemId])
+}
+
+model ReviewImage {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  reviewId String
+  review   Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  imageUrl String
+  altText  String?
+  caption  String?
+
+  sortOrder Int     @default(0)
+  primary   Boolean @default(false)
+
+  @@index([reviewId])
+  @@index([reviewId, sortOrder])
+}
+
+model CollectionPricingProfile {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  collectionId String     @unique
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  // Stored in cents to prevent floating-point pricing errors.
+  baseProductCents Int @default(0)
+  profitCents      Int @default(0)
+
+  // Optional override for a collection's calculated starting price.
+  startingPriceOverrideCents Int?
+
+  active Boolean @default(true)
+
+  notes String?
+}
+
+model CollectionPricingRule {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  collectionId String
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  // Examples:
+  // metal
+  // width
+  // engraving
+  // memorialMaterials
+  // keepsakeMaterials
+  // finishes
+  // glow
+  category String
+
+  // Examples:
+  // Titanium
+  // 8
+  // standard
+  // hair
+  // white-gold
+  optionKey String
+
+  // Customer-facing and admin-friendly name.
+  label String
+
+  // Positive or negative adjustment stored in cents.
+  amountCents Int @default(0)
+
+  active    Boolean @default(true)
+  sortOrder Int     @default(0)
+
+  // Optional storage for unusual rule information.
+  metadataJson String?
+
+  @@unique([collectionId, category, optionKey])
+  @@index([collectionId, category, sortOrder])
+}
+
+model ConfiguratorOption {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Examples:
+  // hair-placement
+  // decorative-accent
+  // accent-style
+  category String
+
+  name        String
+  slug        String
+  description String?
+
+  imageUrl String?
+
+  // Customer price adjustment stored in cents.
+  priceAdjustmentCents Int @default(0)
+
+  active    Boolean @default(true)
+  featured  Boolean @default(false)
+  sortOrder Int     @default(0)
+
+  // Flexible future settings.
+  metadataJson String?
+
+  @@unique([category, slug])
+  @@index([category, active, sortOrder])
+}
+
+model SiteSettings {
+  id        String   @id @default("site-settings")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Business information
+  businessName String @default("Timeless Mineral Creations")
+  contactEmail String?
+  contactPhone String?
+
+  // Business / memorial shipping address
+  addressLine1 String?
+  addressLine2 String?
+  city         String?
+  state        String?
+  postalCode   String?
+  country      String @default("USA")
+
+  // Turnaround time
+  turnaroundMinWeeks Int @default(2)
+  turnaroundMaxWeeks Int @default(10)
+
+  // Shipping
+  usShippingOnly Boolean @default(true)
+
+  standardShippingPriceCents Int @default(800)
+  priorityShippingPriceCents Int @default(1500)
+
+  shippingInstructions String?
+  memorialInstructions String?
+
+  // Site-wide sale
+  sitewideSaleEnabled Boolean @default(false)
+  sitewideSalePercent Int     @default(0)
+  sitewideSaleName    String?
+
+  // Announcement bar
+  announcementEnabled Boolean @default(false)
+  announcementText    String?
+
+  // Social links
+  facebookUrl  String?
+  instagramUrl String?
+  tiktokUrl    String?
+  etsyUrl      String?
 }
