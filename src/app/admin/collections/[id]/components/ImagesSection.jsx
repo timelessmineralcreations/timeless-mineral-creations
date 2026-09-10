@@ -1,110 +1,124 @@
+"use client";
+
+import { useState } from "react";
+
+import ImagePositionEditor from "@/components/admin/ImagePositionEditor";
+
 import Field from "./Field";
 import FormSection from "./FormSection";
-import {
-  inputStyle,
-  twoColumnGridStyle,
-} from "./styles";
+import ImageUploader from "./ImageUploader";
 
-export default function ImagesSection({ collection }) {
+export default function ImagesSection({
+  collection,
+}) {
+  const [cardImage, setCardImage] =
+    useState(collection.cardImage || "");
+
+  const [heroImage, setHeroImage] =
+    useState(collection.heroImage || "");
+
   return (
     <FormSection
       title="Images"
-      description="Set the collection card image and the large hero image used on the collection page."
+      description="Upload each collection image, then drag and zoom it until the preview looks right."
     >
-      <div style={twoColumnGridStyle}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns:
+            "repeat(auto-fit, minmax(min(100%, 340px), 1fr))",
+          gap: "20px",
+        }}
+      >
+        {/* CARD IMAGE UPLOAD */}
         <Field
-          label="Card Image Path"
-          helpText="Example: /rings/signature/signature-card.png"
+          label="Collection Card Image"
+          helpText="Drag and drop an image or click to choose one."
         >
           <input
+            type="hidden"
             name="cardImage"
-            type="text"
-            defaultValue={collection.cardImage || ""}
-            placeholder="/rings/signature/signature-card.png"
-            style={inputStyle}
+            value={cardImage}
+          />
+
+          <ImageUploader
+            value={cardImage}
+            onChange={setCardImage}
+            label="Collection Card Image"
+            folder={`collections/${collection.slug}/card`}
           />
         </Field>
 
+        {/* HERO IMAGE UPLOAD */}
         <Field
-          label="Hero Image Path"
-          helpText="Example: /rings/signature/signature-hero.png"
+          label="Collection Hero Image"
+          helpText="Drag and drop an image or click to choose one."
         >
           <input
+            type="hidden"
             name="heroImage"
-            type="text"
-            defaultValue={collection.heroImage || ""}
-            placeholder="/rings/signature/signature-hero.png"
-            style={inputStyle}
+            value={heroImage}
+          />
+
+          <ImageUploader
+            value={heroImage}
+            onChange={setHeroImage}
+            label="Collection Hero Image"
+            folder={`collections/${collection.slug}/hero`}
           />
         </Field>
       </div>
-
-      {(collection.cardImage || collection.heroImage) ? (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns:
-              "repeat(auto-fit, minmax(min(100%, 260px), 1fr))",
-            gap: "18px",
-          }}
-        >
-          <ImagePreview
-            label="Card Image Preview"
-            imagePath={collection.cardImage}
-          />
-
-          <ImagePreview
-            label="Hero Image Preview"
-            imagePath={collection.heroImage}
-          />
-        </div>
-      ) : null}
-    </FormSection>
-  );
-}
-
-function ImagePreview({ label, imagePath }) {
-  if (!imagePath) {
-    return null;
-  }
-
-  return (
-    <div
-      style={{
-        display: "grid",
-        gap: "8px",
-      }}
-    >
-      <span
-        style={{
-          color: "#e8eeeb",
-          fontSize: "14px",
-          fontWeight: "800",
-        }}
-      >
-        {label}
-      </span>
 
       <div
         style={{
-          width: "100%",
-          aspectRatio: "4 / 3",
-          overflow: "hidden",
-          borderRadius: "12px",
-          border: "1px solid rgba(255, 255, 255, 0.12)",
-          background: "rgba(0, 0, 0, 0.2)",
+          display: "grid",
+          gridTemplateColumns:
+            "repeat(auto-fit, minmax(min(100%, 340px), 1fr))",
+          gap: "20px",
         }}
       >
-        <img
-          src={imagePath}
-          alt={label}
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-          }}
+        {/* CARD IMAGE POSITIONING */}
+        <ImagePositionEditor
+          title="Collection Card Image"
+          description="Drag the image to reposition it inside the collection card."
+          imagePath={cardImage}
+          scaleName="cardImageScale"
+          xName="cardImageX"
+          yName="cardImageY"
+          defaultScale={
+            collection.cardImageScale ?? 1
+          }
+          defaultX={
+            collection.cardImageX ?? 0
+          }
+          defaultY={
+            collection.cardImageY ?? 0
+          }
+          aspectRatio="4 / 3"
+          fitMode="contain"
+        />
+
+        {/* HERO IMAGE POSITIONING */}
+        <ImagePositionEditor
+          title="Collection Hero Image"
+          description="Drag the image to reposition it on the collection page."
+          imagePath={heroImage}
+          scaleName="heroImageScale"
+          xName="heroImageX"
+          yName="heroImageY"
+          defaultScale={
+            collection.heroImageScale ?? 1
+          }
+          defaultX={
+            collection.heroImageX ?? 0
+          }
+          defaultY={
+            collection.heroImageY ?? 0
+          }
+          aspectRatio="16 / 9"
+          fitMode="contain"
         />
       </div>
-    </div>
+    </FormSection>
   );
 }
