@@ -76,7 +76,39 @@ export default function AdminLayout({ children }) {
         color: "#f5f5f5",
       }}
     >
+      <style>{`
+        @media (max-width: 768px) {
+          .admin-shell {
+            grid-template-columns: minmax(0, 1fr) !important;
+          }
+
+          .admin-sidebar {
+            position: static !important;
+            top: auto !important;
+            height: auto !important;
+            padding: 14px 12px !important;
+            border-right: 0 !important;
+            border-bottom: 1px solid rgba(255,255,255,.09) !important;
+            overflow: visible !important;
+          }
+
+          .admin-sidebar nav {
+            display: flex !important;
+            overflow-x: auto !important;
+            gap: 8px !important;
+            padding-bottom: 6px;
+          }
+
+          .admin-sidebar nav a {
+            flex: 0 0 auto;
+            min-height: 40px !important;
+            padding: 0 10px !important;
+          }
+        }
+      `}</style>
+
       <div
+        className="admin-shell"
         style={{
           display: "grid",
           gridTemplateColumns: "260px minmax(0, 1fr)",
@@ -84,6 +116,7 @@ export default function AdminLayout({ children }) {
         }}
       >
         <aside
+          className="admin-sidebar"
           style={{
             position: "sticky",
             top: 0,
