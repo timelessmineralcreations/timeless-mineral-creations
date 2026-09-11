@@ -446,7 +446,15 @@ function validateTrustedSelections(
       )
       : item.design;
 
-  if (selectedDesign) {
+  const designIsBirthstoneLabel =
+    validationCollectionKey ===
+      "evermorenecklace" &&
+    Boolean(item.birthstone);
+
+  if (
+    selectedDesign &&
+    !designIsBirthstoneLabel
+  ) {
     assertAllowedKeys(
       "inlay style",
       [selectedDesign],
