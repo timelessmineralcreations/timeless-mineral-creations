@@ -721,52 +721,6 @@ function validateTrustedSelections(
       );
     }
 
-    if (isRemiValidation) {
-      item.core = {
-        ...(typeof item.core === "object"
-          ? item.core
-          : {}),
-
-        id:
-          trustedCore.slug ||
-          trustedCore.id,
-
-        databaseId:
-          trustedCore.databaseId ||
-          trustedCore.id,
-
-        slug:
-          trustedCore.slug ||
-          trustedCore.id,
-
-        name:
-          trustedCore.name,
-
-        material:
-          trustedCore.material,
-
-        finish:
-          trustedCore.finish,
-
-        color:
-          trustedCore.color,
-      };
-
-      if (trustedCore.material) {
-        item.material =
-          trustedCore.material;
-      }
-
-      if (
-        trustedCore.finish ||
-        trustedCore.color
-      ) {
-        item.finish =
-          trustedCore.finish ||
-          trustedCore.color;
-      }
-    }
-
     if (
       item.material &&
       trustedCore.material &&
@@ -782,55 +736,59 @@ function validateTrustedSelections(
       );
     }
 
-    if (
-      typeof item.core ===
-      "object" &&
-      item.core.material &&
-      trustedCore.material &&
-      normalizeKey(
-        item.core.material
-      ) !==
-      normalizeKey(
-        trustedCore.material
-      )
-    ) {
-      throw new CheckoutValidationError(
-        "Ring core material mismatch."
-      );
+    /*
+     * Once the core itself has been
+     * matched against the trusted
+     * server-side collection data,
+     * client-supplied core metadata
+     * must not drive validation or
+     * pricing.
+     */
+    item.core = {
+      ...(typeof item.core === "object"
+        ? item.core
+        : {}),
+
+      id:
+        trustedCore.slug ||
+        trustedCore.id,
+
+      databaseId:
+        trustedCore.databaseId ||
+        trustedCore.id,
+
+      slug:
+        trustedCore.slug ||
+        trustedCore.id,
+
+      name:
+        trustedCore.name,
+
+      material:
+        trustedCore.material ||
+        null,
+
+      finish:
+        trustedCore.finish ||
+        null,
+
+      color:
+        trustedCore.color ||
+        null,
+    };
+
+    if (trustedCore.material) {
+      item.material =
+        trustedCore.material;
     }
 
     if (
-      typeof item.core ===
-      "object" &&
-      item.core.finish &&
-      trustedCore.finish &&
-      normalizeKey(
-        item.core.finish
-      ) !==
-      normalizeKey(
-        trustedCore.finish
-      )
+      trustedCore.finish ||
+      trustedCore.color
     ) {
-      throw new CheckoutValidationError(
-        "Ring core finish mismatch."
-      );
-    }
-
-    if (
-      typeof item.core ===
-      "object" &&
-      item.core.color &&
-      trustedCore.color &&
-      normalizeKey(
-        item.core.color
-      ) !==
-      normalizeKey(
-        trustedCore.color
-      )
-    ) {
-      throw new CheckoutValidationError(
-        "Ring core color mismatch."
-      );
+      item.finish =
+        trustedCore.finish ||
+        trustedCore.color;
     }
   }
 
