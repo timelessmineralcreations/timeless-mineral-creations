@@ -464,8 +464,26 @@ function validateTrustedSelections(
     Boolean(item.birthstone);
 
   const designIsCompanionWrapper =
-    validationCollectionKey ===
-      "companion" &&
+    [
+      validationCollectionKey,
+      normalizeCategory(
+        collection.id || ""
+      ),
+      normalizeCategory(
+        collection.name || ""
+      ),
+      normalizeCategory(
+        item.collectionId || ""
+      ),
+      normalizeCategory(
+        item.collectionSlug || ""
+      ),
+    ].some(
+      (key) =>
+        key === "companion" ||
+        key === "companioncollection" ||
+        key === "companionring"
+    ) &&
     normalizeKey(selectedDesign) ===
       "companioncustominlays";
 
