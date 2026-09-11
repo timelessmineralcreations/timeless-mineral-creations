@@ -585,7 +585,7 @@ specialRequest:
 
 design: selectedBirthstone
   ? `${selectedBirthstone.month} (${selectedBirthstone.stone})`
-  : "Not selected",
+  : null,
 
 birthstone: selectedBirthstone
   ? {
