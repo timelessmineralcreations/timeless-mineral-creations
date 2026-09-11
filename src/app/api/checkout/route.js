@@ -463,9 +463,16 @@ function validateTrustedSelections(
     isKeepsakeValidation &&
     Boolean(item.birthstone);
 
+  const designIsCompanionWrapper =
+    validationCollectionKey ===
+      "companion" &&
+    normalizeKey(selectedDesign) ===
+      "companioncustominlays";
+
   if (
     selectedDesign &&
-    !designIsBirthstoneLabel
+    !designIsBirthstoneLabel &&
+    !designIsCompanionWrapper
   ) {
     assertAllowedKeys(
       "inlay style",
