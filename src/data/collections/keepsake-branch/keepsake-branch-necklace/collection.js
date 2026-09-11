@@ -3,8 +3,8 @@ import { keepsakeBranchPricing } from "./pricing";
 import { keepsakeBranchPhotos } from "./necklacePhotos";
 
 export const keepsakeBranchCollection = {
-  id: "keepsake-branch",
-  slug: "keepsake-branch",
+  id: "keepsake-branch-necklace",
+  slug: "keepsake-branch-necklace",
 
   category: "keepsake",
 
