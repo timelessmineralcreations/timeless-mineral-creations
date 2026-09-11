@@ -76,6 +76,60 @@ function getMetadataValue(metadata, configuration, possibleKeys) {
   return null;
 }
 
+function formatEmailMoney(value) {
+  const amount = Number(value || 0);
+
+  return Number.isFinite(amount)
+    ? amount.toFixed(2)
+    : "0.00";
+}
+
+function escapeEmailHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function getEmailOrderNumber(id) {
+  const value =
+    String(id || "").trim();
+
+  if (!value) {
+    return "ORDER";
+  }
+
+  return `ORD-${value
+    .slice(-8)
+    .toUpperCase()}`;
+}
+
+function getEmailItemDetails(item) {
+  return [
+    ["Material", item?.material],
+    ["Core", item?.core],
+    ["Style", item?.style],
+    ["Width", item?.width],
+    ["Size", item?.size],
+    ["Design", item?.design],
+    [
+      "Memorial Material",
+      item?.memorialMaterials,
+    ],
+    ["Mineral", item?.minerals],
+    [
+      "Accent Material",
+      item?.accentMaterials,
+    ],
+    ["Glow", item?.glow],
+    ["Engraving", item?.engraving],
+  ].filter(([, value]) =>
+    String(value ?? "").trim()
+  );
+}
+
 async function sendOrderConfirmationEmail(order) {
   const apiKey = String(
     process.env.RESEND_API_KEY || ""
@@ -99,7 +153,8 @@ async function sendOrderConfirmationEmail(order) {
     return true;
   }
 
-  const resend = new Resend(apiKey);
+  const resend =
+    new Resend(apiKey);
 
   const fromEmail =
     String(
@@ -107,9 +162,326 @@ async function sendOrderConfirmationEmail(order) {
     ).trim() ||
     "Timeless Mineral Creations <onboarding@resend.dev>";
 
-  const total = Number(
-    order.totalPrice || 0
-  ).toFixed(2);
+  const orderNumber =
+    getEmailOrderNumber(order.id);
+
+  const items =
+    Array.isArray(order.items)
+      ? order.items
+      : [];
+
+  const textItems =
+    items.length > 0
+      ? items
+          .map((item, index) => {
+            const quantity =
+              Number(item?.quantity || 1);
+
+            const unitPrice =
+              Number(item?.unitPrice || 0);
+
+            const productName =
+              String(
+                item?.productName ||
+                  item?.collectionName ||
+                  "Custom Memorial Jewelry"
+              ).trim();
+
+            const collectionName =
+              String(
+                item?.collectionName || ""
+              ).trim();
+
+            const details =
+              getEmailItemDetails(item)
+                .map(
+                  ([label, value]) =>
+                    `${label}: ${String(
+                      value
+                    ).trim()}`
+                )
+                .join("\n");
+
+            const collectionLine =
+              collectionName &&
+              collectionName !==
+                productName
+                ? `\nCollection: ${collectionName}`
+                : "";
+
+            return `${index + 1}. ${productName}${collectionLine}
+Quantity: ${quantity}
+Price: $${formatEmailMoney(
+              unitPrice
+            )}${
+              details
+                ? `\n${details}`
+                : ""
+            }`;
+          })
+          .join("\n\n")
+      : "Custom Memorial Jewelry";
+
+  const htmlItems =
+    items.length > 0
+      ? items
+          .map((item) => {
+            const quantity =
+              Number(item?.quantity || 1);
+
+            const unitPrice =
+              Number(item?.unitPrice || 0);
+
+            const productName =
+              String(
+                item?.productName ||
+                  item?.collectionName ||
+                  "Custom Memorial Jewelry"
+              ).trim();
+
+            const collectionName =
+              String(
+                item?.collectionName || ""
+              ).trim();
+
+            const details =
+              getEmailItemDetails(item);
+
+            const detailHtml =
+              details.length > 0
+                ? `<table style="width:100%;border-collapse:collapse;margin-top:12px;">${details
+                    .map(
+                      ([label, value]) =>
+                        `<tr>
+                          <td style="padding:4px 12px 4px 0;color:#666;vertical-align:top;width:42%;">
+                            ${escapeEmailHtml(
+                              label
+                            )}
+                          </td>
+                          <td style="padding:4px 0;font-weight:600;vertical-align:top;">
+                            ${escapeEmailHtml(
+                              value
+                            )}
+                          </td>
+                        </tr>`
+                    )
+                    .join("")}</table>`
+                : "";
+
+            const collectionHtml =
+              collectionName &&
+              collectionName !==
+                productName
+                ? `<div style="color:#666;margin-top:3px;">
+                    ${escapeEmailHtml(
+                      collectionName
+                    )}
+                  </div>`
+                : "";
+
+            return `<div style="border:1px solid #e5e5e5;border-radius:12px;padding:18px;margin:0 0 16px;">
+              <div style="font-size:18px;font-weight:700;">
+                ${escapeEmailHtml(
+                  productName
+                )}
+              </div>
+
+              ${collectionHtml}
+
+              <div style="margin-top:10px;">
+                Quantity: ${quantity}
+              </div>
+
+              <div>
+                Price: $${formatEmailMoney(
+                  unitPrice
+                )}
+              </div>
+
+              ${detailHtml}
+            </div>`;
+          })
+          .join("")
+      : `<div style="border:1px solid #e5e5e5;border-radius:12px;padding:18px;">
+          Custom Memorial Jewelry
+        </div>`;
+
+  const shippingLines = [
+    order.shippingName,
+    order.shippingAddress1,
+    order.shippingAddress2,
+    [
+      order.shippingCity,
+      order.shippingState,
+      order.shippingPostal,
+    ]
+      .filter(Boolean)
+      .join(", ")
+      .replace(
+        /,\s*([^,]+)$/,
+        " $1"
+      ),
+    order.shippingCountry,
+  ]
+    .map((value) =>
+      String(value || "").trim()
+    )
+    .filter(Boolean);
+
+  const shippingText =
+    shippingLines.length > 0
+      ? shippingLines.join("\n")
+      : "Not provided";
+
+  const shippingHtml =
+    shippingLines.length > 0
+      ? shippingLines
+          .map(escapeEmailHtml)
+          .join("<br>")
+      : "Not provided";
+
+  const customerNote =
+    String(
+      order.customerNote || ""
+    ).trim();
+
+  const text = `Thank you for your order with Timeless Mineral Creations.
+
+Your payment has been received successfully.
+
+ORDER ${orderNumber}
+
+${textItems}
+
+ORDER SUMMARY
+Subtotal: $${formatEmailMoney(
+    order.subtotal
+  )}
+Shipping: $${formatEmailMoney(
+    order.shippingCost
+  )}
+Tax: $${formatEmailMoney(
+    order.taxAmount
+  )}
+Total: $${formatEmailMoney(
+    order.totalPrice
+  )}
+
+SHIPPING ADDRESS
+${shippingText}${
+    customerNote
+      ? `
+
+CUSTOMER NOTE
+${customerNote}`
+      : ""
+  }
+
+Your order is now awaiting your memorial materials. We will keep you updated as your order moves through production.
+
+Thank you for trusting Timeless Mineral Creations with something so meaningful.`;
+
+  const html =
+    `<div style="font-family:Arial,sans-serif;line-height:1.6;color:#222;max-width:650px;margin:0 auto;">
+      <h2 style="margin-bottom:8px;">
+        Thank You For Your Order
+      </h2>
+
+      <p>
+        Thank you for choosing Timeless Mineral Creations.
+      </p>
+
+      <p>
+        Your payment has been received successfully.
+      </p>
+
+      <div style="background:#f6f6f6;border-radius:10px;padding:14px 18px;margin:24px 0;">
+        <strong>Order ${escapeEmailHtml(
+          orderNumber
+        )}</strong>
+      </div>
+
+      <h3>Your Order</h3>
+
+      ${htmlItems}
+
+      <h3 style="margin-top:28px;">
+        Order Summary
+      </h3>
+
+      <table style="width:100%;border-collapse:collapse;">
+        <tr>
+          <td style="padding:5px 0;">
+            Subtotal
+          </td>
+          <td style="padding:5px 0;text-align:right;">
+            $${formatEmailMoney(
+              order.subtotal
+            )}
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:5px 0;">
+            Shipping
+          </td>
+          <td style="padding:5px 0;text-align:right;">
+            $${formatEmailMoney(
+              order.shippingCost
+            )}
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:5px 0;">
+            Tax
+          </td>
+          <td style="padding:5px 0;text-align:right;">
+            $${formatEmailMoney(
+              order.taxAmount
+            )}
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:10px 0;border-top:1px solid #ddd;font-size:18px;font-weight:700;">
+            Total
+          </td>
+          <td style="padding:10px 0;border-top:1px solid #ddd;text-align:right;font-size:18px;font-weight:700;">
+            $${formatEmailMoney(
+              order.totalPrice
+            )}
+          </td>
+        </tr>
+      </table>
+
+      <h3 style="margin-top:28px;">
+        Shipping Address
+      </h3>
+
+      <p>
+        ${shippingHtml}
+      </p>
+
+      ${
+        customerNote
+          ? `<h3 style="margin-top:28px;">Customer Note</h3>
+             <p>${escapeEmailHtml(
+               customerNote
+             ).replace(/\n/g, "<br>")}</p>`
+          : ""
+      }
+
+      <div style="margin-top:28px;padding-top:20px;border-top:1px solid #e5e5e5;">
+        <p>
+          Your order is now awaiting your memorial materials. We will keep you updated as your order moves through production.
+        </p>
+
+        <p>
+          Thank you for trusting Timeless Mineral Creations with something so meaningful.
+        </p>
+      </div>
+    </div>`;
 
   const result =
     await resend.emails.send(
@@ -117,26 +489,9 @@ async function sendOrderConfirmationEmail(order) {
         from: fromEmail,
         to: [order.customerEmail],
         subject:
-          "Order Confirmed - Timeless Mineral Creations",
-        text:
-          `Thank you for your order with Timeless Mineral Creations.
-
-Your payment has been received successfully.
-
-Order total: $${total}
-
-Your order is now awaiting your memorial materials. We will keep you updated as your order moves through production.
-
-Thank you for trusting Timeless Mineral Creations with something so meaningful.`,
-        html:
-          `<div style="font-family:Arial,sans-serif;line-height:1.6;color:#222;max-width:620px;margin:0 auto;">
-            <h2>Thank You For Your Order</h2>
-            <p>Thank you for choosing Timeless Mineral Creations.</p>
-            <p>Your payment has been received successfully.</p>
-            <p><strong>Order total: $${total}</strong></p>
-            <p>Your order is now awaiting your memorial materials. We will keep you updated as your order moves through production.</p>
-            <p>Thank you for trusting Timeless Mineral Creations with something so meaningful.</p>
-          </div>`,
+          `${orderNumber} Order Confirmed - Timeless Mineral Creations`,
+        text,
+        html,
       },
       {
         idempotencyKey:
