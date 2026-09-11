@@ -5,19 +5,49 @@ import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 
 export default function CartPage() {
-  const { cart, removeItem, clearItems } = useCart();
+  const { cart, removeItem, clearItems, siteSettings } = useCart();
   const [customerNote, setCustomerNote] = useState("");
   const [isCheckingOut, setIsCheckingOut] = useState(false);
-  const subtotal = cart.reduce(
+  const rawSubtotal = cart.reduce(
     (total, item) =>
       total + (Number(item.price) || 0) * (item.quantity || 1),
     0
   );
 
+  const salePercent =
+    siteSettings?.sitewideSaleEnabled
+      ? Math.max(
+          0,
+          Math.min(
+            100,
+            Number(
+              siteSettings.sitewideSalePercent || 0
+            )
+          )
+        )
+      : 0;
+
+  const saleSavings =
+    rawSubtotal * (salePercent / 100);
+
+  const subtotal =
+    rawSubtotal - saleSavings;
+
+  const standardShipping =
+    Number(
+      siteSettings?.standardShippingPriceCents ??
+        800
+    ) / 100;
+
+  const priorityShipping =
+    Number(
+      siteSettings?.priorityShippingPriceCents ??
+        1500
+    ) / 100;
+
   async function handleCheckout() {
     if (isCheckingOut) return;
     setIsCheckingOut(true);
-
     try {
       const response = await fetch("/api/checkout", {
         method: "POST",
@@ -199,32 +229,62 @@ export default function CartPage() {
             />
 
             <SummaryLine
+              label="Merchandise"
+              value={`$${rawSubtotal.toFixed(2)}`}
+            />
+
+            {salePercent > 0 && (
+              <SummaryLine
+                label={`${
+                  siteSettings?.sitewideSaleName ||
+                  "Sitewide Sale"
+                } (${salePercent}% off)`}
+                value={`-$${saleSavings.toFixed(2)}`}
+              />
+            )}
+
+            <SummaryLine
               label="Subtotal"
               value={`$${subtotal.toFixed(2)}`}
             />
 
             <SummaryLine
-              label="Shipping"
-              value="Calculated at checkout"
+              label="USPS Ground Advantage"
+              value={`$${standardShipping.toFixed(2)}`}
             />
 
-            <hr
-              style={{
+            <SummaryLine
+              label="USPS Priority Mail"
+              value={`$${priorityShipping.toFixed(2)}`}
+            />
+
+            <hr              style={{
                 margin: "18px 0",
                 opacity: 0.2,
               }}
             />
 
             <SummaryLine
-              label="Total"
+              label="Total before shipping"
               value={`$${subtotal.toFixed(2)}`}
               large
             />
 
+            <p
+              style={{
+                margin: "8px 0 0",
+                fontSize: "12px",
+                lineHeight: 1.5,
+                opacity: 0.72,
+              }}
+            >
+              Select Ground Advantage or Priority Mail
+              during secure checkout.
+            </p>
+
 <div
   style={{
-    marginTop: "22px",
-    paddingTop: "20px",
+    marginTop: "22px",    paddingTop: "20px",
     borderTop: "1px solid rgba(255,255,255,.14)",
   }}
 >
@@ -352,21 +412,42 @@ export default function CartPage() {
               Clear Cart
             </button>
 
-            <p
+            <div
               style={{
                 fontSize: "12px",
-                opacity: 0.7,
+                opacity: 0.76,
                 marginTop: "16px",
+                lineHeight: 1.55,
               }}
             >
-              Each piece is handcrafted. Memorial material
-              shipping instructions will be provided after
-              checkout.
-            </p>
+              <p style={{ margin: "0 0 8px" }}>
+                Current turnaround:{" "}
+                {siteSettings?.turnaroundMinWeeks ?? 2}-
+                {siteSettings?.turnaroundMaxWeeks ?? 10} weeks.
+              </p>
+
+              {siteSettings?.usShippingOnly && (
+                <p style={{ margin: "0 0 8px" }}>
+                  Shipping is currently available within
+                  the United States only.
+                </p>
+              )}
+
+              {siteSettings?.shippingInstructions && (
+                <p style={{ margin: "0 0 8px" }}>
+                  {siteSettings.shippingInstructions}
+                </p>
+              )}
+
+              <p style={{ margin: 0 }}>
+                Memorial material shipping instructions
+                will also be included in your order
+                confirmation email.
+              </p>
+            </div>
           </aside>
         </div>
-      )}
-    </main>
+      )}    </main>
   );
 }
 

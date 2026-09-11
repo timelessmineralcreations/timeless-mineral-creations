@@ -107,15 +107,28 @@ function getEmailOrderNumber(id) {
 }
 
 function getEmailItemDetails(item) {
+  const configuration =
+    safeParseJson(
+      item?.configurationJson
+    ) || {};
+
+  const specialRequest =
+    String(
+      configuration.specialRequest || ""
+    ).trim();
+
   return [
     ["Material", item?.material],
     ["Core", item?.core],
     ["Style", item?.style],
     ["Width", item?.width],
+    [
+      "Channel Width",
+      configuration.channelWidth,
+    ],
     ["Size", item?.size],
     ["Design", item?.design],
-    [
-      "Memorial Material",
+    [      "Memorial Material",
       item?.memorialMaterials,
     ],
     ["Mineral", item?.minerals],
@@ -124,17 +137,31 @@ function getEmailItemDetails(item) {
       item?.accentMaterials,
     ],
     ["Glow", item?.glow],
+    [
+      "Channels / Sections",
+      configuration.channels,
+    ],
     ["Engraving", item?.engraving],
+    [
+      "Engraving Font",
+      configuration.engravingFont,
+    ],
+    [
+      "Special Request",
+      specialRequest &&
+      specialRequest.toLowerCase() !== "no"
+        ? specialRequest
+        : "",
+    ],
   ].filter(([, value]) =>
     String(value ?? "").trim()
   );
 }
 
-async function sendOrderConfirmationEmail(order) {
+async function sendOrderConfirmationEmail(order, context = {}) {
   const apiKey = String(
     process.env.RESEND_API_KEY || ""
   ).trim();
-
   if (!apiKey) {
     console.error(
       "RESEND_API_KEY is missing. Order confirmation email was not sent."
@@ -165,10 +192,73 @@ async function sendOrderConfirmationEmail(order) {
   const orderNumber =
     getEmailOrderNumber(order.id);
 
+  const siteSettings =
+    await getEmailSiteSettings();
+
+  const shippingMethod =
+    String(
+      context.shippingMethod || ""
+    ).trim() ||
+    "USPS shipping";
+
+  const salePercent =
+    Math.max(
+      0,
+      Math.min(
+        100,
+        Number(context.salePercent || 0)
+      )
+    );
+
+  const saleName =
+    String(
+      context.saleName || ""
+    ).trim() ||
+    "Sitewide Sale";
+
+  const memorialAddressLines = [
+    siteSettings.businessName,
+    siteSettings.addressLine1,
+    siteSettings.addressLine2,
+    [
+      siteSettings.city,
+      siteSettings.state,
+      siteSettings.postalCode,
+    ]
+      .filter(Boolean)
+      .join(", ")
+      .replace(
+        /,\s*([^,]+)$/,
+        " $1"
+      ),
+    siteSettings.country,
+  ]
+    .map((value) =>
+      String(value || "").trim()
+    )
+    .filter(Boolean);
+
+  const memorialAddressText =
+    memorialAddressLines.join("\n");
+
+  const memorialAddressHtml =
+    memorialAddressLines
+      .map(escapeEmailHtml)
+      .join("<br>");
+
+  const shippingInstructions =
+    String(
+      siteSettings.shippingInstructions || ""
+    ).trim();
+
+  const memorialInstructions =
+    String(
+      siteSettings.memorialInstructions || ""
+    ).trim();
+
   const items =
     Array.isArray(order.items)
-      ? order.items
-      : [];
+      ? order.items      : [];
 
   const textItems =
     items.length > 0
@@ -357,19 +447,24 @@ ORDER SUMMARY
 Subtotal: $${formatEmailMoney(
     order.subtotal
   )}
-Shipping: $${formatEmailMoney(
+Shipping (${shippingMethod}): $${formatEmailMoney(
     order.shippingCost
   )}
-Tax: $${formatEmailMoney(
-    order.taxAmount
+Tax: $${formatEmailMoney(    order.taxAmount
   )}
 Total: $${formatEmailMoney(
     order.totalPrice
-  )}
+  )}${
+    salePercent > 0
+      ? `
+
+SALE
+${saleName}: ${salePercent}% off applied`
+      : ""
+  }
 
 SHIPPING ADDRESS
-${shippingText}${
-    customerNote
+${shippingText}${    customerNote
       ? `
 
 CUSTOMER NOTE
@@ -377,10 +472,34 @@ ${customerNote}`
       : ""
   }
 
-Your order is now awaiting your memorial materials. We will keep you updated as your order moves through production.
+CURRENT TURNAROUND
+${siteSettings.turnaroundMinWeeks}-${siteSettings.turnaroundMaxWeeks} weeks${
+    shippingInstructions
+      ? `
+
+SHIPPING INFORMATION
+${shippingInstructions}`
+      : ""
+  }
+
+MEMORIAL MATERIAL MAILING INSTRUCTIONS${
+    memorialAddressText
+      ? `
+
+Mail memorial materials to:
+${memorialAddressText}`
+      : ""
+  }${
+    memorialInstructions
+      ? `
+
+${memorialInstructions}`
+      : ""
+  }
+
+We will keep you updated as your order moves through production.
 
 Thank you for trusting Timeless Mineral Creations with something so meaningful.`;
-
   const html =
     `<div style="font-family:Arial,sans-serif;line-height:1.6;color:#222;max-width:650px;margin:0 auto;">
       <h2 style="margin-bottom:8px;">
@@ -423,11 +542,12 @@ Thank you for trusting Timeless Mineral Creations with something so meaningful.`
 
         <tr>
           <td style="padding:5px 0;">
-            Shipping
+            Shipping (${escapeEmailHtml(
+              shippingMethod
+            )})
           </td>
           <td style="padding:5px 0;text-align:right;">
-            $${formatEmailMoney(
-              order.shippingCost
+            $${formatEmailMoney(              order.shippingCost
             )}
           </td>
         </tr>
@@ -455,10 +575,19 @@ Thank you for trusting Timeless Mineral Creations with something so meaningful.`
         </tr>
       </table>
 
+      ${
+        salePercent > 0
+          ? `<p style="margin-top:10px;font-weight:700;">
+               ${escapeEmailHtml(
+                 saleName
+               )}: ${salePercent}% off applied
+             </p>`
+          : ""
+      }
+
       <h3 style="margin-top:28px;">
         Shipping Address
       </h3>
-
       <p>
         ${shippingHtml}
       </p>
@@ -472,13 +601,54 @@ Thank you for trusting Timeless Mineral Creations with something so meaningful.`
           : ""
       }
 
+      <h3 style="margin-top:28px;">
+        Current Turnaround
+      </h3>
+
+      <p>
+        ${siteSettings.turnaroundMinWeeks}-${siteSettings.turnaroundMaxWeeks} weeks
+      </p>
+
+      ${
+        shippingInstructions
+          ? `<h3 style="margin-top:28px;">Shipping Information</h3>
+             <p>${escapeEmailHtml(
+               shippingInstructions
+             ).replace(/\n/g, "<br>")}</p>`
+          : ""
+      }
+
+      <div style="margin-top:28px;padding:18px;border:1px solid #e5e5e5;border-radius:12px;background:#fafafa;">
+        <h3 style="margin-top:0;">
+          Memorial Material Mailing Instructions
+        </h3>
+
+        ${
+          memorialAddressHtml
+            ? `<p>
+                 <strong>Mail memorial materials to:</strong><br>
+                 ${memorialAddressHtml}
+               </p>`
+            : ""
+        }
+
+        ${
+          memorialInstructions
+            ? `<p>${escapeEmailHtml(
+                 memorialInstructions
+               ).replace(/\n/g, "<br>")}</p>`
+            : `<p>
+                 Please contact Timeless Mineral Creations if you need memorial material mailing instructions.
+               </p>`
+        }
+      </div>
+
       <div style="margin-top:28px;padding-top:20px;border-top:1px solid #e5e5e5;">
         <p>
-          Your order is now awaiting your memorial materials. We will keep you updated as your order moves through production.
+          We will keep you updated as your order moves through production.
         </p>
 
-        <p>
-          Thank you for trusting Timeless Mineral Creations with something so meaningful.
+        <p>          Thank you for trusting Timeless Mineral Creations with something so meaningful.
         </p>
       </div>
     </div>`;
@@ -529,10 +699,60 @@ Thank you for trusting Timeless Mineral Creations with something so meaningful.`
 
   return true;
 }
+async function getEmailSiteSettings() {
+  const defaults = {
+    businessName:
+      "Timeless Mineral Creations",
+    addressLine1: "",
+    addressLine2: "",
+    city: "",
+    state: "",
+    postalCode: "",
+    country: "USA",
+    turnaroundMinWeeks: 2,
+    turnaroundMaxWeeks: 10,
+    shippingInstructions: "",
+    memorialInstructions: "",
+  };
+
+  try {
+    const settings =
+      await prisma.siteSettings.findUnique({
+        where: {
+          id: "site-settings",
+        },
+        select: {
+          businessName: true,
+          addressLine1: true,
+          addressLine2: true,
+          city: true,
+          state: true,
+          postalCode: true,
+          country: true,
+          turnaroundMinWeeks: true,
+          turnaroundMaxWeeks: true,
+          shippingInstructions: true,
+          memorialInstructions: true,
+        },
+      });
+
+    return {
+      ...defaults,
+      ...(settings || {}),
+    };
+  } catch (error) {
+    console.error(
+      "Unable to load email site settings:",
+      error
+    );
+
+    return defaults;
+  }
+}
+
 export async function POST(request) {
   const body = await request.text();
   const signature = request.headers.get("stripe-signature");
-
   if (!signature) {
     return Response.json(
       { error: "Missing Stripe signature." },
@@ -569,10 +789,10 @@ export async function POST(request) {
             expand: [
               "line_items.data.price.product",
               "payment_intent",
+              "shipping_cost.shipping_rate",
             ],
           }
         );
-
         if (
           session.payment_status !== "paid" &&
           event.type !== "checkout.session.async_payment_succeeded"
@@ -610,10 +830,20 @@ export async function POST(request) {
           customerDetails?.address ||
           null;
 
+        const shippingRate =
+          session.shipping_cost?.shipping_rate;
+
+        const shippingMethod =
+          shippingRate &&
+          typeof shippingRate === "object"
+            ? shippingRate.display_name ||
+              shippingRate.name ||
+              null
+            : null;
+
         const stripeLineItems = session.line_items?.data || [];
 
-        const orderItems = stripeLineItems.map((lineItem) => {
-          const product =
+        const orderItems = stripeLineItems.map((lineItem) => {          const product =
             lineItem.price?.product &&
             typeof lineItem.price.product === "object"
               ? lineItem.price.product
@@ -861,11 +1091,19 @@ export async function POST(request) {
 
         try {
           await sendOrderConfirmationEmail(
-            order
+            order,
+            {
+              shippingMethod,
+              saleName:
+                session.metadata?.saleName ||
+                "",
+              salePercent:
+                session.metadata?.salePercent ||
+                "0",
+            }
           );
         } catch (emailError) {
-          console.error(
-            "Order was saved, but confirmation email failed:",
+          console.error(            "Order was saved, but confirmation email failed:",
             emailError
           );
         }

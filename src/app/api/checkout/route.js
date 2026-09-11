@@ -1,12 +1,15 @@
 import Stripe from "stripe";
 import { checkoutRateLimit } from "@/lib/checkout-rate-limit";
+import { prisma } from "@/lib/prisma";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
+const STRIPE_ALLOWED_SHIPPING_COUNTRIES =
+  "AD AE AF AG AI AL AM AO AQ AR AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ CA CD CF CG CH CI CK CL CM CN CO CR CV CW CY CZ DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FO FR GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY HK HN HR HT HU ID IE IL IM IN IO IQ IS IT JE JM JO JP KE KG KH KI KM KN KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MK ML MM MN MO MQ MR MS MT MU MV MW MX MY MZ NA NC NE NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PY QA RE RO RS RU RW SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SZ TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG US UY UZ VA VC VE VG VN VU WF WS YE YT ZA ZM ZW".split(" ");
+
 export async function POST(request) {
   /*
-   * CHECKOUT RATE LIMIT
-   *
+   * CHECKOUT RATE LIMIT   *
    * Limit: 10 checkout attempts per minute
    * per IP address.
    */
@@ -90,9 +93,24 @@ export async function POST(request) {
       );
     }
 
+    const siteSettings =
+      await getCheckoutSiteSettings();
+
+    const salePercent =
+      siteSettings.sitewideSaleEnabled
+        ? Math.max(
+            0,
+            Math.min(
+              100,
+              Number(
+                siteSettings.sitewideSalePercent || 0
+              )
+            )
+          )
+        : 0;
+
     const lineItems = cart.map((item) => {
       console.log(item);
-
       const isRemi =
   item.collectionId === "remi" ||
   item.collectionSlug === "remi" ||
@@ -115,10 +133,60 @@ export async function POST(request) {
           ? buildKeepsakeDescription(item)
           : buildStandardRingDescription(item);
 
+      const originalUnitAmount =
+        Math.max(
+          0,
+          Math.round(
+            (Number(item.price) || 0) * 100
+          )
+        );
+
+      const unitAmount =
+        Math.max(
+          0,
+          Math.round(
+            originalUnitAmount *
+              ((100 - salePercent) / 100)
+          )
+        );
+
+      const coreStyle =
+        typeof item.core === "object"
+          ? [
+              item.core?.color,
+              item.core?.edge ||
+                item.core?.finish,
+            ]
+              .filter(Boolean)
+              .join(" ")
+          : "";
+
+      const coreName =
+        typeof item.core === "object"
+          ? item.core?.name ||
+            coreStyle ||
+            formatOptionName(item.core?.id) ||
+            ""
+          : formatOptionName(item.core);
+
+      const designName =
+        item.design?.name ||
+        item.designName ||
+        item.inlayStyleName ||
+        "";
+
+      const widthValue =
+        typeof item.width === "object"
+          ? item.width?.width
+          : item.width;
+
+      const channelWidth =
+        item.channelWidth ??
+        item.width?.channel;
+
       return {
         price_data: {
-          currency: "usd",
-          product_data: {
+          currency: "usd",          product_data: {
   name:
     item.collectionName ||
     "Custom Memorial Jewelry",
@@ -147,46 +215,49 @@ export async function POST(request) {
       ""
   ).slice(0, 500),
 
-  core: String(
-    typeof item.core === "object"
-      ? item.core?.name ||
-          item.core?.id ||
-          item.core?.color ||
-          ""
-      : item.core || ""
-  ).slice(0, 500),
+  core: String(coreName).slice(0, 500),
 
   style: String(
-    item.design?.name ||
-      item.designName ||
-      item.inlayStyleName ||
+    coreStyle ||
+      formatOptionName(item.core?.id) ||
       ""
   ).slice(0, 500),
 
-  width: String(
-    typeof item.width === "object"
-      ? item.width?.width ?? ""
-      : item.width ?? ""
+  design: String(
+    designName
   ).slice(0, 500),
 
-  size: String(
-    item.size ?? ""
+  width: String(
+    widthValue != null && widthValue !== ""
+      ? `${widthValue}mm`
+      : ""
+  ).slice(0, 500),
+
+  channelWidth: String(
+    channelWidth != null && channelWidth !== ""
+      ? `${channelWidth}mm`
+      : ""
+  ).slice(0, 500),
+
+  size: String(    item.size ?? ""
   ).slice(0, 500),
 
   memorialMaterials: buildMetadataList(
-    item.memorialMaterials
+    item.memorialMaterials,
+    formatMemorialMaterial
   ),
 
   minerals: buildMetadataList(
-    item.minerals
+    item.minerals,
+    formatOptionName
   ),
 
   accentMaterials: buildMetadataList(
-    item.accentMaterials
+    item.accentMaterials,
+    formatAccentMaterial
   ),
 
-  glow: String(
-    item.glow?.name ||
+  glow: String(    item.glow?.name ||
       item.glow?.id ||
       item.glowName ||
       (typeof item.glow === "string"
@@ -204,46 +275,90 @@ export async function POST(request) {
 
   engravingFont: String(
     item.engravingFont?.name ||
-      item.engravingFont?.id ||
+      formatOptionName(
+        item.engravingFont?.id
+      ) ||
       ""
   ).slice(0, 500),
-
   channels: buildChannelMetadata(item).slice(
     0,
     500
   ),
 
-    specialRequest: item.specialRequest
-    ? "Yes"
+  specialRequest: item.specialRequest
+    ? `Yes (+$${Number(
+        item.specialRequestPrice || 30
+      ).toFixed(0)})`
     : "No",
 
   itemDescription: description.slice(0, 500),
 },
 },
-unit_amount: Math.round(
-  (Number(item.price) || 0) * 100
-),
+unit_amount: unitAmount,
 },
 quantity: item.quantity || 1,
-};
-    });
+};    });
 
     const origin = request.headers.get("origin");
+
+    const allowedCountries =
+      siteSettings.usShippingOnly
+        ? ["US"]
+        : STRIPE_ALLOWED_SHIPPING_COUNTRIES;
+
+    const shippingOptions = [
+      {
+        shipping_rate_data: {
+          type: "fixed_amount",
+          fixed_amount: {
+            amount:
+              siteSettings.standardShippingPriceCents,
+            currency: "usd",
+          },
+          display_name:
+            "USPS Ground Advantage",
+        },
+      },
+      {
+        shipping_rate_data: {
+          type: "fixed_amount",
+          fixed_amount: {
+            amount:
+              siteSettings.priorityShippingPriceCents,
+            currency: "usd",
+          },
+          display_name:
+            "USPS Priority Mail",
+        },
+      },
+    ];
 
     const session =
       await stripe.checkout.sessions.create({
         mode: "payment",
         line_items: lineItems,
         shipping_address_collection: {
-          allowed_countries: ["US"],
+          allowed_countries: allowedCountries,
         },
+        shipping_options: shippingOptions,
         metadata: {
-  customerNote: String(customerNote || "").slice(0, 500),
-},
+          customerNote: String(
+            customerNote || ""
+          ).slice(0, 500),
+          saleName: String(
+            siteSettings.sitewideSaleName || ""
+          ).slice(0, 500),
+          salePercent: String(salePercent),
+          turnaroundMinWeeks: String(
+            siteSettings.turnaroundMinWeeks
+          ),
+          turnaroundMaxWeeks: String(
+            siteSettings.turnaroundMaxWeeks
+          ),
+        },
         success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${origin}/cart`,
       });
-
     return Response.json({ url: session.url });
   } catch (error) {
     console.error("Stripe checkout error:", error);
@@ -642,22 +757,36 @@ function formatOptionName(value) {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-function buildMetadataList(values) {
+function buildMetadataList(
+  values,
+  formatter = formatOptionName
+) {
   if (!Array.isArray(values)) {
     return "";
   }
-
   return values
     .map((value) => {
       if (typeof value === "string") {
-        return value;
+        return (
+          formatter(value) ||
+          value
+        );
       }
 
-      return value?.name || value?.id || value?.label || "";
+      const rawValue =
+        value?.id ||
+        value?.value ||
+        value?.label ||
+        "";
+
+      return (
+        value?.name ||
+        formatter(rawValue) ||
+        rawValue
+      );
     })
     .filter(Boolean)
-    .join(", ")
-    .slice(0, 500);
+    .join(", ")    .slice(0, 500);
 }
 
 function buildChannelMetadata(item) {
@@ -678,35 +807,54 @@ function buildChannelMetadata(item) {
       const channelName =
         channel.name || `Channel ${index + 1}`;
 
+      const memorialValue =
+        selection.memorial?.id ||
+        selection.memorial;
+
       const memorial =
         selection.memorial?.name ||
-        selection.memorial?.id ||
-        selection.memorial ||
+        formatMemorialMaterial(
+          memorialValue
+        ) ||
         "None";
+
+      const mineralValue =
+        selection.mineral?.id ||
+        selection.mineral;
 
       const mineral =
         selection.mineral?.name ||
-        selection.mineral?.id ||
-        selection.mineral ||
+        formatOptionName(
+          mineralValue
+        ) ||
         "None";
+
+      const accentValue =
+        selection.accent?.id ||
+        selection.accentMaterial?.id ||
+        selection.accent ||
+        selection.accentMaterial;
 
       const accent =
         selection.accent?.name ||
-        selection.accent?.id ||
         selection.accentMaterial?.name ||
-        selection.accentMaterial?.id ||
-        selection.accent ||
-        selection.accentMaterial ||
+        formatAccentMaterial(
+          accentValue
+        ) ||
         "";
+
+      const glowValue =
+        selection.glow?.id ||
+        selection.glow;
 
       const glow =
         selection.glow?.name ||
-        selection.glow?.id ||
-        selection.glow ||
+        formatOptionName(
+          glowValue
+        ) ||
         "";
 
-      return [
-        channelName,
+      return [        channelName,
         `Memorial: ${memorial}`,
         `Mineral: ${mineral}`,
         accent ? `Accent: ${accent}` : null,
@@ -716,4 +864,64 @@ function buildChannelMetadata(item) {
         .join(" | ");
     })
     .join(" || ");
+}
+
+async function getCheckoutSiteSettings() {
+  const defaults = {
+    turnaroundMinWeeks: 2,
+    turnaroundMaxWeeks: 10,
+    usShippingOnly: true,
+    standardShippingPriceCents: 800,
+    priorityShippingPriceCents: 1500,
+    sitewideSaleEnabled: false,
+    sitewideSalePercent: 0,
+    sitewideSaleName: "",
+  };
+
+  try {
+    const settings =
+      await prisma.siteSettings.findUnique({
+        where: {
+          id: "site-settings",
+        },
+        select: {
+          turnaroundMinWeeks: true,
+          turnaroundMaxWeeks: true,
+          usShippingOnly: true,
+          standardShippingPriceCents: true,
+          priorityShippingPriceCents: true,
+          sitewideSaleEnabled: true,
+          sitewideSalePercent: true,
+          sitewideSaleName: true,
+        },
+      });
+
+    return {
+      ...defaults,
+      ...(settings || {}),
+      standardShippingPriceCents:
+        Math.max(
+          0,
+          Number(
+            settings?.standardShippingPriceCents ??
+              defaults.standardShippingPriceCents
+          ) || 0
+        ),
+      priorityShippingPriceCents:
+        Math.max(
+          0,
+          Number(
+            settings?.priorityShippingPriceCents ??
+              defaults.priorityShippingPriceCents
+          ) || 0
+        ),
+    };
+  } catch (error) {
+    console.error(
+      "Unable to load checkout settings:",
+      error
+    );
+
+    return defaults;
+  }
 }

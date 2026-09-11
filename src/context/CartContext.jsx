@@ -5,11 +5,10 @@ import { getCart, addToCart, removeFromCart, clearCart } from "@/utils/cart";
 
 const CartContext = createContext(null);
 
-export function CartProvider({ children }) {
+export function CartProvider({ children, siteSettings = {} }) {
   const [cart, setCart] = useState([]);
 
-  useEffect(() => {
-    setCart(getCart());
+  useEffect(() => {    setCart(getCart());
   }, []);
 
   function addItem(item) {
@@ -35,10 +34,10 @@ export function CartProvider({ children }) {
         addItem,
         removeItem,
         clearItems,
+        siteSettings,
       }}
     >
-      {children}
-    </CartContext.Provider>
+      {children}    </CartContext.Provider>
   );
 }
 

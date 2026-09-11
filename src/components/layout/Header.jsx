@@ -3,13 +3,30 @@
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 
-export default function Header() {
+export default function Header({ siteSettings = {} }) {
   const { cartCount } = useCart();
+
+  const salePercent = Math.max(
+    0,
+    Math.min(
+      100,
+      Number(siteSettings.sitewideSalePercent || 0)
+    )
+  );
+
+  const showSale =
+    Boolean(siteSettings.sitewideSaleEnabled) &&
+    salePercent > 0;
+
+  const showAnnouncement =
+    Boolean(siteSettings.announcementEnabled) &&
+    String(
+      siteSettings.announcementText || ""
+    ).trim();
 
   return (
     <header
-      style={{
-        position: "sticky",
+      style={{        position: "sticky",
         top: 0,
         zIndex: 1000,
         background: "rgba(12,12,12,.95)",
@@ -17,10 +34,43 @@ export default function Header() {
         borderBottom: "1px solid rgba(255,255,255,.08)",
       }}
     >
+      {showAnnouncement && (
+        <div
+          style={{
+            padding: "8px 20px",
+            textAlign: "center",
+            fontSize: "13px",
+            fontWeight: 700,
+            background: "#1f1f1f",
+            borderBottom:
+              "1px solid rgba(255,255,255,.08)",
+          }}
+        >
+          {siteSettings.announcementText}
+        </div>
+      )}
+
+      {showSale && (
+        <div
+          style={{
+            padding: "8px 20px",
+            textAlign: "center",
+            fontSize: "13px",
+            fontWeight: 800,
+            color: "#111",
+            background:
+              "linear-gradient(135deg, rgb(233, 192, 84), rgb(184, 134, 11))",
+          }}
+        >
+          {siteSettings.sitewideSaleName ||
+            "Sitewide Sale"}
+          : {salePercent}% off sitewide
+        </div>
+      )}
+
       <div
         style={{
-          maxWidth: "1500px",
-          margin: "0 auto",
+          maxWidth: "1500px",          margin: "0 auto",
           padding: "10px 30px",
           display: "flex",
           justifyContent: "space-between",
