@@ -102,6 +102,77 @@ const keepsakeBuilders = [
   "keepsake",
 ];
 
+function centsToDollars(value) {
+  return Number(value || 0) / 100;
+}
+
+function setNestedPricingValue(
+  pricing,
+  category,
+  optionKey,
+  amount
+) {
+  if (!category || category === "general") {
+    pricing[optionKey] = amount;
+    return;
+  }
+
+  const categoryPath = String(category)
+    .split(".")
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  let currentObject = pricing;
+
+  for (const key of categoryPath) {
+    if (
+      !currentObject[key] ||
+      typeof currentObject[key] !== "object" ||
+      Array.isArray(currentObject[key])
+    ) {
+      currentObject[key] = {};
+    }
+
+    currentObject = currentObject[key];
+  }
+
+  currentObject[optionKey] = amount;
+}
+
+function buildDatabasePricing(
+  pricingProfile,
+  pricingRules = []
+) {
+  if (!pricingProfile?.active) {
+    return null;
+  }
+
+  const pricing = {
+    baseProduct: centsToDollars(
+      pricingProfile.baseProductCents
+    ),
+
+    profit: centsToDollars(
+      pricingProfile.profitCents
+    ),
+  };
+
+  for (const rule of pricingRules) {
+    if (!rule?.active) {
+      continue;
+    }
+
+    setNestedPricingValue(
+      pricing,
+      rule.category,
+      rule.optionKey,
+      centsToDollars(rule.amountCents)
+    );
+  }
+
+  return pricing;
+}
+
 export default async function CollectionPage({ params }) {
   const { slug } = await params;
 
@@ -122,6 +193,26 @@ export default async function CollectionPage({ params }) {
         published: true,
         comingSoon: true,
         heroImage: true,
+        pricingProfile: {
+          select: {
+            active: true,
+            baseProductCents: true,
+            profitCents: true,
+          },
+        },
+
+        pricingRules: {
+          where: {
+            active: true,
+          },
+
+          select: {
+            category: true,
+            optionKey: true,
+            amountCents: true,
+            active: true,
+          },
+        },
         photos: {
           where: {
             active: true,
@@ -262,6 +353,11 @@ export default async function CollectionPage({ params }) {
       };
     });
 
+  const databasePricing =
+    buildDatabasePricing(
+      databaseCollection?.pricingProfile,
+      databaseCollection?.pricingRules || []
+    );
   const galleryPhotos =
     (databaseCollection?.galleryItems || [])
       .map((item) => {
@@ -303,6 +399,10 @@ export default async function CollectionPage({ params }) {
 
   const collectionWithGallery = {
     ...collection,
+    ...(databasePricing && {
+      databasePricing,
+      useDatabasePricing: true,
+    }),
     published: databaseCollection.published,
     comingSoon: databaseCollection.comingSoon,
     heroImage:

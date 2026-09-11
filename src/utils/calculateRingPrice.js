@@ -13,9 +13,30 @@ export default function calculateRingPrice({
   specialRequest = false,
   selectedMaterial,
 }) {
-  const pricing = collection?.pricing || {};
+  const usingDatabasePricing = Boolean(
+    collection?.useDatabasePricing &&
+      collection?.databasePricing
+  );
 
-  let totalPrice = Number(pricing.profit || 100);
+  const pricing = usingDatabasePricing
+    ? collection.databasePricing
+    : collection?.pricing || {};
+
+  let totalPrice = 0;
+
+  if (usingDatabasePricing) {
+    totalPrice += Number(
+      pricing.baseProduct || 0
+    );
+
+    totalPrice += Number(
+      pricing.profit || 0
+    );
+  } else {
+    totalPrice += Number(
+      pricing.profit || 100
+    );
+  }
 
   // Ring metal / core cost
   const metal =
@@ -51,15 +72,24 @@ export default function calculateRingPrice({
         : material?.id;
 
     totalPrice += Number(
-      pricing.memorialMaterials?.[materialId] ||
-        material?.price ||
+      pricing.memorialMaterials?.[materialId] ??
+        material?.price ??
         0
     );
   });
 
   // Minerals
   selectedMinerals.forEach((mineral) => {
-    totalPrice += Number(mineral?.price || 0);
+    const mineralId =
+      typeof mineral === "string"
+        ? mineral
+        : mineral?.id;
+
+    totalPrice += Number(
+      pricing.minerals?.[mineralId] ??
+        mineral?.price ??
+        0
+    );
   });
 
  // Accent materials
