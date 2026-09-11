@@ -337,6 +337,30 @@ function validateTrustedSelections(
       ? configuration.options
       : {};
 
+  const validationCollectionKey =
+    normalizeCategory(
+      collection.slug ||
+      collection.id ||
+      collection.name
+    );
+
+  const isRemiValidation =
+    [
+      "remi",
+      "theremiring",
+      "heirloom",
+      "heirloomnecklace",
+      "legacycross",
+      "legacyheart",
+    ].includes(
+      validationCollectionKey
+    ) ||
+    normalizeCategory(
+      collection.name
+    ).includes(
+      "remi"
+    );
+
   /*
    * MINERALS
    */
@@ -639,7 +663,13 @@ function validateTrustedSelections(
   if (item.core) {
     const selectedCoreKey =
       normalizeKey(
-        item.core
+        isRemiValidation
+          ? (
+            item.finish ||
+            item.core?.finish ||
+            item.core
+          )
+          : item.core
       );
 
     trustedCore =
@@ -650,6 +680,9 @@ function validateTrustedSelections(
             core.databaseId,
             core.slug,
             core.name,
+            isRemiValidation
+              ? core.finish
+              : null,
           ]).includes(
             selectedCoreKey
           )
@@ -659,6 +692,52 @@ function validateTrustedSelections(
       throw new CheckoutValidationError(
         "Invalid ring core selection."
       );
+    }
+
+    if (isRemiValidation) {
+      item.core = {
+        ...(typeof item.core === "object"
+          ? item.core
+          : {}),
+
+        id:
+          trustedCore.slug ||
+          trustedCore.id,
+
+        databaseId:
+          trustedCore.databaseId ||
+          trustedCore.id,
+
+        slug:
+          trustedCore.slug ||
+          trustedCore.id,
+
+        name:
+          trustedCore.name,
+
+        material:
+          trustedCore.material,
+
+        finish:
+          trustedCore.finish,
+
+        color:
+          trustedCore.color,
+      };
+
+      if (trustedCore.material) {
+        item.material =
+          trustedCore.material;
+      }
+
+      if (
+        trustedCore.finish ||
+        trustedCore.color
+      ) {
+        item.finish =
+          trustedCore.finish ||
+          trustedCore.color;
+      }
     }
 
     if (
