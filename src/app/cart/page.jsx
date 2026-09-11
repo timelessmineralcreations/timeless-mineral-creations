@@ -117,9 +117,30 @@ export default function CartPage() {
   item.bezelSize !== undefined &&
   item.keepsakeMaterial !== undefined;
 
+              const cartCollectionKey =
+                String(
+                  item.collectionSlug ||
+                  item.collectionId ||
+                  ""
+                )
+                  .toLowerCase()
+                  .replace(
+                    /[^a-z0-9]/g,
+                    ""
+                  );
+
               const isKeepsake =
-                item.collectionId === "keepsake" ||
-                item.collectionSlug === "keepsake";
+                [
+                  "evermorering",
+                  "evermorebracelet",
+                  "evermorenecklace",
+                  "keepsakebranch",
+                  "keepsakebranchring",
+                  "keepsakebranchnecklace",
+                  "keepsake",
+                ].includes(
+                  cartCollectionKey
+                );
 
               return (
                 <div
@@ -590,7 +611,7 @@ function KeepsakeCartDetails({ item }) {
         label="Birthstone"
         value={
           item.birthstone
-            ? `${item.birthstone.month} • ${item.birthstone.stone}`
+            ? `${item.birthstone.month} - ${item.birthstone.stone}`
             : "Not selected"
         }
       />

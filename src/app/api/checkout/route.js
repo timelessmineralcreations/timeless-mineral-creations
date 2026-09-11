@@ -344,6 +344,19 @@ function validateTrustedSelections(
       collection.name
     );
 
+  const isKeepsakeValidation =
+    [
+      "evermorering",
+      "evermorebracelet",
+      "evermorenecklace",
+      "keepsakebranch",
+      "keepsakebranchring",
+      "keepsakebranchnecklace",
+      "keepsake",
+    ].includes(
+      validationCollectionKey
+    );
+
   const isRemiValidation =
     [
       "remi",
@@ -447,8 +460,7 @@ function validateTrustedSelections(
       : item.design;
 
   const designIsBirthstoneLabel =
-    validationCollectionKey ===
-      "evermorenecklace" &&
+    isKeepsakeValidation &&
     Boolean(item.birthstone);
 
   if (
@@ -989,16 +1001,18 @@ function validateTrustedSelections(
     ]);
 
   const submittedMemorialMaterials =
-    [
-      ...asArray(
-        item.memorialMaterials
-      ),
+    isKeepsakeValidation
+      ? []
+      : [
+        ...asArray(
+          item.memorialMaterials
+        ),
 
-      ...getChannelSelections(
-        item,
-        ["memorial"]
-      ),
-    ];
+        ...getChannelSelections(
+          item,
+          ["memorial"]
+        ),
+      ];
 
   if (
     submittedMemorialMaterials
@@ -1085,6 +1099,18 @@ function validateTrustedSelections(
       ],
       allowedKeepsakeMaterials
     );
+  }
+
+  if (isKeepsakeValidation) {
+    const canonicalKeepsakeMaterial =
+      item.keepsakeMaterial ||
+      item.keepsakeMaterialId ||
+      null;
+
+    item.memorialMaterials =
+      canonicalKeepsakeMaterial
+        ? [canonicalKeepsakeMaterial]
+        : [];
   }
 
   /*
@@ -3275,7 +3301,17 @@ export async function POST(request) {
         );
 
       const isKeepsake =
-        trustedCollectionKey === "keepsake";
+        [
+          "evermorering",
+          "evermorebracelet",
+          "evermorenecklace",
+          "keepsakebranch",
+          "keepsakebranchring",
+          "keepsakebranchnecklace",
+          "keepsake",
+        ].includes(
+          trustedCollectionKey
+        );
 
       const description = isRemi
         ? buildRemiDescription(item)
@@ -3634,7 +3670,7 @@ function buildKeepsakeDescription(item) {
     )}`,
 
     item.birthstone
-      ? `Birthstone: ${item.birthstone.month} G�� ${item.birthstone.stone}`
+      ? `Birthstone: ${item.birthstone.month} - ${item.birthstone.stone}`
       : null,
 
     item.specialRequest
