@@ -485,7 +485,7 @@ function validateTrustedSelections(
         key === "companionring"
     ) &&
     normalizeKey(selectedDesign) ===
-      "companioncustominlays";
+      "companion-custom-inlays";
 
   if (
     selectedDesign &&
