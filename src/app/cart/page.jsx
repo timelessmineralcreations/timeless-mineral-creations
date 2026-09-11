@@ -593,7 +593,6 @@ function KeepsakeCartDetails({ item }) {
         value={item.material || "Not selected"}
       />
 
-      <CartLine label="Profile" value="Slim" />
 
       <CartLine
         label="Size"
