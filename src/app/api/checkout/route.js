@@ -3610,7 +3610,7 @@ function buildRemiDescription(item) {
       : null,
   ];
 
-  return lines.filter(Boolean).join(" G�� ");
+  return lines.filter(Boolean).join(" | ");
 }
 
 function buildKeepsakeDescription(item) {
@@ -3634,7 +3634,7 @@ function buildKeepsakeDescription(item) {
       : null,
   ];
 
-  return lines.filter(Boolean).join(" G�� ");
+  return lines.filter(Boolean).join(" | ");
 }
 
 function buildStandardRingDescription(item) {
@@ -3732,7 +3732,7 @@ function buildStandardRingDescription(item) {
       : null,
   ];
 
-  return lines.filter(Boolean).join(" G�� ");
+  return lines.filter(Boolean).join(" | ");
 }
 
 function buildChannelDescriptions(item) {
