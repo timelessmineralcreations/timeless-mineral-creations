@@ -3721,7 +3721,8 @@ function buildStandardRingDescription(item) {
 
     `Accent Materials: ${accentMaterialNames}`,
 
-    !hasChannelDescriptions
+    !hasChannelDescriptions ||
+    getGlowName(item.glow) !== "None"
       ? `Glow Powder: ${getGlowName(item.glow)}`
       : null,
 

@@ -641,9 +641,11 @@ function StandardRingCartDetails({ item }) {
 
   const globalGlowName =
     item.glow?.name ||
+    formatOptionName(item.glow?.id) ||
     (typeof item.glow === "string"
       ? formatOptionName(item.glow)
-      : "None");
+      : "") ||
+    "None";
 
   return (
     <>
@@ -748,7 +750,8 @@ function StandardRingCartDetails({ item }) {
         }
       />
 
-      {!hasChannelSelections && (
+      {(!hasChannelSelections ||
+        globalGlowName !== "None") && (
         <CartLine
           label="Glow"
           value={globalGlowName}
