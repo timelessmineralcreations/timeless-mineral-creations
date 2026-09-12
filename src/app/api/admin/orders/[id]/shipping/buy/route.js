@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { easypost } from "@/lib/easypost";
+import { getEasyPost } from "@/lib/easypost";
 
 export const runtime = "nodejs";
 
@@ -437,7 +437,7 @@ export async function POST(
     }
 
     const shipment =
-      await easypost.Shipment.retrieve(
+      await getEasyPost().Shipment.retrieve(
         shipmentId
       );
 
@@ -520,7 +520,7 @@ export async function POST(
     }
 
     const purchasedShipment =
-      await easypost.Shipment.buy(
+      await getEasyPost().Shipment.buy(
         shipmentId,
         selectedRate
       );
@@ -558,7 +558,7 @@ export async function POST(
     if (!printableLabelUrl) {
       try {
         const convertedShipment =
-          await easypost.Shipment
+          await getEasyPost().Shipment
             .convertLabelFormat(
               shipmentId,
               "PDF"

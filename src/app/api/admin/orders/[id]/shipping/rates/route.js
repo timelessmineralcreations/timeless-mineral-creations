@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { easypost } from "@/lib/easypost";
+import { getEasyPost } from "@/lib/easypost";
 
 export const runtime = "nodejs";
 
@@ -151,7 +151,7 @@ export async function POST(request, { params }) {
     }
 
     const shipment =
-      await easypost.Shipment.create({
+      await getEasyPost().Shipment.create({
         from_address: {
           company:
             process.env.EASYPOST_FROM_NAME ||

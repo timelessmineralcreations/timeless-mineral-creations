@@ -1,9 +1,17 @@
 import EasyPostClient from "@easypost/api";
 
-const apiKey = process.env.EASYPOST_API_KEY;
+let easypostClient = null;
 
-if (!apiKey) {
-  throw new Error("EASYPOST_API_KEY is not configured.");
+export function getEasyPost() {
+  const apiKey = process.env.EASYPOST_API_KEY;
+
+  if (!apiKey) {
+    throw new Error("EASYPOST_API_KEY is not configured.");
+  }
+
+  if (!easypostClient) {
+    easypostClient = new EasyPostClient(apiKey);
+  }
+
+  return easypostClient;
 }
-
-export const easypost = new EasyPostClient(apiKey);
