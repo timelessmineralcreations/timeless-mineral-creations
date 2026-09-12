@@ -101,8 +101,8 @@ export default async function OrdersPage({ searchParams }) {
   const orders = await prisma.order.findMany({
     where: statusFilter
       ? {
-          status: statusFilter,
-        }
+        status: statusFilter,
+      }
       : undefined,
 
     orderBy: {
@@ -145,34 +145,32 @@ export default async function OrdersPage({ searchParams }) {
           </h1>
 
           <p
-  style={{
-    margin: 0,
-    color: "#a3a3a3",
-  }}
->
-  {statusFilter
-    ? `${orders.length} ${
-        orders.length === 1 ? "order" : "orders"
-      } with status: ${statusFilter}`
-    : `${orders.length} ${
-        orders.length === 1 ? "order" : "orders"
-      } saved`}
-</p>
+            style={{
+              margin: 0,
+              color: "#a3a3a3",
+            }}
+          >
+            {statusFilter
+              ? `${orders.length} ${orders.length === 1 ? "order" : "orders"
+              } with status: ${statusFilter}`
+              : `${orders.length} ${orders.length === 1 ? "order" : "orders"
+              } saved`}
+          </p>
 
-{statusFilter ? (
-  <Link
-    href="/admin/orders"
-    style={{
-      display: "inline-block",
-      marginTop: "10px",
-      color: "#f7c948",
-      fontWeight: 700,
-      textDecoration: "none",
-    }}
-  >
-    Clear filter
-  </Link>
-) : null}
+          {statusFilter ? (
+            <Link
+              href="/admin/orders"
+              style={{
+                display: "inline-block",
+                marginTop: "10px",
+                color: "#f7c948",
+                fontWeight: 700,
+                textDecoration: "none",
+              }}
+            >
+              Clear filter
+            </Link>
+          ) : null}
         </div>
       </div>
 
@@ -266,7 +264,7 @@ export default async function OrdersPage({ searchParams }) {
                       </div>
 
                       {order.customerEmail &&
-                      order.customerEmail !== getCustomerName(order) ? (
+                        order.customerEmail !== getCustomerName(order) ? (
                         <div
                           style={{
                             color: "#a3a3a3",

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useRef } from "react";
 import Link from "next/link";
@@ -31,6 +31,11 @@ export default function CheckoutSuccessPage() {
 
     clearItems();
 
+    /*
+     * Remove the Stripe session marker
+     * after clearing so refreshing this
+     * page later cannot clear a new cart.
+     */
     window.history.replaceState(
       {},
       "",
@@ -49,14 +54,21 @@ export default function CheckoutSuccessPage() {
       <div
         style={{
           textAlign: "center",
-          border: "1px solid rgba(255,255,255,.12)",
+          border:
+            "1px solid rgba(255,255,255,.12)",
           borderRadius: "24px",
-          background: "rgba(255,255,255,.05)",
+          background:
+            "rgba(255,255,255,.05)",
           padding: "60px 40px",
         }}
       >
-        <div style={{ fontSize: "70px", marginBottom: "20px" }}>
-          ❤️
+        <div
+          style={{
+            fontSize: "70px",
+            marginBottom: "20px",
+          }}
+        >
+          ✅
         </div>
 
         <h1
@@ -77,9 +89,11 @@ export default function CheckoutSuccessPage() {
             margin: "0 auto",
           }}
         >
-          Thank you for trusting Timeless Mineral Creations with something so
-          meaningful. Your handcrafted memorial piece has officially been
-          reserved.
+          Thank you for trusting Timeless
+          Mineral Creations with something
+          so meaningful. Your handcrafted
+          memorial piece has officially
+          been reserved.
         </p>
 
         <div
@@ -87,25 +101,37 @@ export default function CheckoutSuccessPage() {
             marginTop: "45px",
             padding: "30px",
             borderRadius: "18px",
-            background: "rgba(255,255,255,.04)",
+            background:
+              "rgba(255,255,255,.04)",
             textAlign: "left",
           }}
         >
           <h2>What Happens Next?</h2>
 
-          <p>✅ Your payment has been received.</p>
+          <p>
+            ✅ Your payment has been
+            received.
+          </p>
 
           <p>
-            ✅ You'll receive an email with memorial material shipping
+            ✅ You'll receive an email
+            with memorial material shipping
             instructions.
           </p>
 
           <p>
-            ✅ Once your memorial materials arrive, your handcrafted memorial piece will enter production.
+            ✅ Once your memorial materials
+            arrive, your handcrafted
+            memorial piece will enter
+            production.
           </p>
 
           <p>
-            ✅ Estimated completion time is approximately <strong>2–10 weeks.</strong>
+            ✅ Estimated completion time is
+            approximately{" "}
+            <strong>
+              2â€“10 weeks.
+            </strong>
           </p>
         </div>
 
@@ -139,7 +165,8 @@ export default function CheckoutSuccessPage() {
               padding: "14px 24px",
               borderRadius: "12px",
               textDecoration: "none",
-              border: "1px solid rgba(255,255,255,.18)",
+              border:
+                "1px solid rgba(255,255,255,.18)",
               color: "white",
             }}
           >

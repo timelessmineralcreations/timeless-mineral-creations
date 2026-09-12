@@ -42,9 +42,9 @@ export default function GlowSelector({
             key={glow.id}
             title={glow.name}
             description={
-              glow.price === 0
-                ? glow.description
-                : `${glow.description} (+$${glow.price})`
+              glow.price > 0
+                ? `+$${glow.price}`
+                : "Included"
             }
             image={glow.image}
             active={selectedGlow?.id === glow.id}

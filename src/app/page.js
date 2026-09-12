@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { collections } from "@/data/collections";
-
+import HomeFeaturedGallery from "@/components/home/HomeFeaturedGallery";
 const featuredSlugs = [
   "signature",
   "mountain",
@@ -199,7 +199,9 @@ export default function Home() {
             ))}
           </div>
         </div>
-      </section>
+            </section>
+
+      <HomeFeaturedGallery />
 
       {/* PROCESS */}
       <section className="border-y border-white/10 bg-[#0b0b0b] px-5 py-20 sm:px-8 lg:px-12">

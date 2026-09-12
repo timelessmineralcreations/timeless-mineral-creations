@@ -109,6 +109,7 @@ const navItems = [
 export default function AdminLayout({ children }) {
   return (
     <div
+      className="admin-page"
       style={{
         minHeight: "100vh",
         background:
@@ -116,39 +117,7 @@ export default function AdminLayout({ children }) {
         color: "#f5f5f5",
       }}
     >
-      <style>{`
-        @media (max-width: 768px) {
-          .admin-shell {
-            grid-template-columns: minmax(0, 1fr) !important;
-          }
-
-          .admin-sidebar {
-            position: static !important;
-            top: auto !important;
-            height: auto !important;
-            padding: 14px 12px !important;
-            border-right: 0 !important;
-            border-bottom: 1px solid rgba(255,255,255,.09) !important;
-            overflow: visible !important;
-          }
-
-          .admin-sidebar nav {
-            display: flex !important;
-            overflow-x: auto !important;
-            gap: 8px !important;
-            padding-bottom: 6px;
-          }
-
-          .admin-sidebar nav a {
-            flex: 0 0 auto;
-            min-height: 40px !important;
-            padding: 0 10px !important;
-          }
-        }
-      `}</style>
-
       <div
-        className="admin-shell"
         style={{
           display: "grid",
           gridTemplateColumns: "260px minmax(0, 1fr)",
@@ -156,14 +125,14 @@ export default function AdminLayout({ children }) {
         }}
       >
         <aside
-          className="admin-sidebar"
           style={{
             position: "sticky",
             top: 0,
             height: "100vh",
             boxSizing: "border-box",
             padding: "24px 18px",
-            borderRight: "1px solid rgba(255, 255, 255, 0.09)",
+            borderRight:
+              "1px solid rgba(255, 255, 255, 0.09)",
             background:
               "linear-gradient(180deg, rgba(5, 13, 11, 0.98), rgba(8, 18, 15, 0.98))",
             overflowY: "auto",
@@ -250,7 +219,8 @@ export default function AdminLayout({ children }) {
             style={{
               marginTop: "28px",
               padding: "18px 10px 4px",
-              borderTop: "1px solid rgba(255, 255, 255, 0.08)",
+              borderTop:
+                "1px solid rgba(255, 255, 255, 0.08)",
             }}
           >
             <Link
@@ -283,7 +253,8 @@ export default function AdminLayout({ children }) {
               justifyContent: "space-between",
               gap: "18px",
               padding: "0 28px",
-              borderBottom: "1px solid rgba(255, 255, 255, 0.08)",
+              borderBottom:
+                "1px solid rgba(255, 255, 255, 0.08)",
               background: "rgba(5, 13, 11, 0.72)",
               backdropFilter: "blur(14px)",
               position: "sticky",
@@ -330,7 +301,8 @@ export default function AdminLayout({ children }) {
                   display: "grid",
                   placeItems: "center",
                   borderRadius: "50%",
-                  border: "1px solid rgba(217, 181, 109, 0.35)",
+                  border:
+                    "1px solid rgba(217, 181, 109, 0.35)",
                   background: "rgba(217, 181, 109, 0.11)",
                   color: "#e9c77e",
                   fontWeight: "900",

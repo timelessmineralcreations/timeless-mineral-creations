@@ -20,12 +20,17 @@ export const twinOffsetRingCores = [
 
     finish: "Hammered",
 
+    style: "Twin Offset",
+
     supplier: "RingSupplies",
 
     supplierCost: 30,
 
     supplierUrl:
       "https://ringsupplies.com/products/tungsten-double-offset-1-5mm-channel",
+
+    notes:
+      "Hammered tungsten ring featuring two offset inlay channels.",
 
     widths: [
       {

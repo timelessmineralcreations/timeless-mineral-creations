@@ -1,17 +1,31 @@
 export const oceanRingCores = [
   {
     id: "ocean-titanium-8mm",
+
     name: "Ocean Wave Titanium",
+
     material: "Titanium",
+
+    finish: "Brushed",
+
     style: "Ocean Wave",
+
     supplier: "RingSupplies",
+
+    supplierCost: 30,
+
+    supplierUrl:
+      "https://ringsupplies.com/products/ocean-wave-titanium-ring-core",
+
     notes:
       "Brushed titanium ocean-wave ring with a polished comfort-fit interior.",
 
     widths: [
       {
         width: 8,
+
         channelWidth: "4mm",
+
         sizes: [
           5,
           5.5,

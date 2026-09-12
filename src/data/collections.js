@@ -1,3 +1,4 @@
+import { clamCollection } from "./collections/clam/collection";
 import { dualChannelCollection } from "./collections/dual-channel/collection";
 import { mountainCollection } from "./collections/mountain/collection";
 import { oceanCollection } from "./collections/ocean/collection";
@@ -583,24 +584,7 @@ export const collections = [
     },
   },
 
-  {
-    id: "clam",
-    slug: "clam",
-
-    name: "Clam Shell Collection",
-
-    description:
-      "A beautiful titanium clam shell ring customized with memorial materials, minerals, glow powder, and engraving.",
-
-    images: [
-      "/rings/clamshell collection/clam-titanium-blue-opal-2-8mm.png",
-    ],
-
-    heroImage:
-      "/rings/clamshell collection/clam-titanium-blue-opal-2-8mm.png",
-
-    startingPrice: 130,
-  },
+  clamCollection,
 
   dualChannelCollection,
   mountainCollection,

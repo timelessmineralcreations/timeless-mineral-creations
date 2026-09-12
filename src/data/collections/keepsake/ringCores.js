@@ -46,6 +46,13 @@ export const keepsakeRingCores = [
 
     notes:
       "2x4mm marquise keepsake bezels with 2mm CZ birthstones. No engraving.",
+
+    ringDetails: {
+      settingQuantity: 8,
+      settingShape: "Marquise",
+      settingSize: "2 × 4 mm",
+      birthstoneSize: "2 mm CZ",
+    },
   },
 
   {
@@ -79,6 +86,13 @@ export const keepsakeRingCores = [
 
     notes:
       "2x4mm marquise keepsake bezels with 2mm CZ birthstones. No engraving.",
+
+    ringDetails: {
+      settingQuantity: 8,
+      settingShape: "Marquise",
+      settingSize: "2 × 4 mm",
+      birthstoneSize: "2 mm CZ",
+    },
   },
 
   {
@@ -112,5 +126,12 @@ export const keepsakeRingCores = [
 
     notes:
       "2x4mm marquise keepsake bezels with 2mm CZ birthstones. No engraving.",
+
+    ringDetails: {
+      settingQuantity: 8,
+      settingShape: "Marquise",
+      settingSize: "2 × 4 mm",
+      birthstoneSize: "2 mm CZ",
+    },
   },
 ];

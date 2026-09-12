@@ -2,10 +2,22 @@ export const heirloomNecklacePendantCores = [
   {
     id: "heirloom-necklace",
 
-    name: "Heirloom Necklace",
+    name: "Heirloom Keepsake Necklace",
 
     description:
-      "Elegant sterling silver bezel-set keepsake necklace available in white gold, yellow gold, and rose gold plated finishes.",
+      "Elegant 925 sterling silver bezel-set keepsake necklace available in white gold, yellow gold, and rose gold plated finishes.",
+
+    productType: "necklace",
+
+    material: "Sterling Silver",
+
+    finish: "White Gold Plated",
+
+    color: "Silver",
+
+    style: "Bezel Necklace",
+
+    supplier: "LancelotDIY",
 
     featured: true,
 

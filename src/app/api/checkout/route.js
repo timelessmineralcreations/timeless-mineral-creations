@@ -1,12 +1,11 @@
 import Stripe from "stripe";
-import { checkoutRateLimit } from "@/lib/checkout-rate-limit";
 import { prisma } from "@/lib/prisma";
+import { checkoutRateLimit } from "@/lib/checkout-rate-limit";
 import { accentMaterials } from "@/data/accentMaterials";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-
-const STRIPE_ALLOWED_SHIPPING_COUNTRIES =
-  "AD AE AF AG AI AL AM AO AQ AR AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ CA CD CF CG CH CI CK CL CM CN CO CR CV CW CY CZ DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FO FR GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY HK HN HR HT HU ID IE IL IM IN IO IQ IS IT JE JM JO JP KE KG KH KI KM KN KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MK ML MM MN MO MQ MR MS MT MU MV MW MX MY MZ NA NC NE NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PY QA RE RO RS RU RW SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SZ TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG US UY UZ VA VC VE VG VN VU WF WS YE YT ZA ZM ZW".split(" ");
+const stripe = new Stripe(
+  process.env.STRIPE_SECRET_KEY
+);
 
 function normalizeSalePercent(value) {
   const percent =
@@ -318,6 +317,112 @@ function getChannelSelections(
   return values;
 }
 
+function assertMatchingSelections(
+  label,
+  values
+) {
+  const keys =
+    uniqueKeys(
+      values.filter(
+        (value) =>
+          value !== null &&
+          value !== undefined &&
+          value !== ""
+      )
+    );
+
+  if (keys.length > 1) {
+    throw new CheckoutValidationError(
+      `${label} selections do not match.`
+    );
+  }
+}
+
+function resolveCatalogEntry(
+  value,
+  entries,
+  keys = [
+    "id",
+    "slug",
+    "name",
+  ]
+) {
+  const selectedKey =
+    normalizeKey(value);
+
+  if (!selectedKey) {
+    return null;
+  }
+
+  return (entries || []).find(
+    (entry) =>
+      entry &&
+      entry.active !== false &&
+      uniqueKeys(
+        keys.map(
+          (key) =>
+            entry?.[key]
+        )
+      ).includes(
+        selectedKey
+      )
+  ) || null;
+}
+
+function assertSameCatalogSelection(
+  label,
+  values,
+  entries,
+  keys
+) {
+  const submitted =
+    values.filter(
+      (value) =>
+        value !== null &&
+        value !== undefined &&
+        value !== ""
+    );
+
+  if (submitted.length < 2) {
+    return;
+  }
+
+  const resolvedIds =
+    new Set();
+
+  for (const value of submitted) {
+    const entry =
+      resolveCatalogEntry(
+        value,
+        entries,
+        keys
+      );
+
+    if (!entry) {
+      continue;
+    }
+
+    const canonicalKey =
+      normalizeKey(
+        entry.id ??
+        entry.slug ??
+        entry.name
+      );
+
+    if (canonicalKey) {
+      resolvedIds.add(
+        canonicalKey
+      );
+    }
+  }
+
+  if (resolvedIds.size > 1) {
+    throw new CheckoutValidationError(
+      label + " selections do not match."
+    );
+  }
+}
+
 function validateTrustedSelections(
   item,
   collection
@@ -337,46 +442,30 @@ function validateTrustedSelections(
       ? configuration.options
       : {};
 
-  const validationCollectionKey =
-    normalizeCategory(
-      collection.slug ||
-      collection.id ||
-      collection.name
-    );
-
-  const isKeepsakeValidation =
-    [
-      "evermorering",
-      "evermorebracelet",
-      "evermorenecklace",
-      "keepsakebranch",
-      "keepsakebranchring",
-      "keepsakebranchnecklace",
-      "keepsake",
-    ].includes(
-      validationCollectionKey
-    );
-
-  const isRemiValidation =
-    [
-      "remi",
-      "theremiring",
-      "heirloom",
-      "heirloomnecklace",
-      "legacycross",
-      "legacyheart",
-    ].includes(
-      validationCollectionKey
-    ) ||
-    normalizeCategory(
-      collection.name
-    ).includes(
-      "remi"
-    );
-
   /*
    * MINERALS
    */
+  const trustedMineralCatalog =
+    (
+      collection.minerals ||
+      []
+    )
+      .map(
+        (entry) =>
+          entry?.mineral
+      )
+      .filter(Boolean);
+
+  assertSameCatalogSelection(
+    "Mineral",
+    [
+      item.mineral,
+      item.naturalMineral,
+      item.naturalMineralId,
+    ],
+    trustedMineralCatalog
+  );
+
   const allowedMinerals =
     uniqueKeys(
       (
@@ -459,39 +548,7 @@ function validateTrustedSelections(
       )
       : item.design;
 
-  const designIsBirthstoneLabel =
-    isKeepsakeValidation &&
-    Boolean(item.birthstone);
-
-  const designIsCompanionWrapper =
-    [
-      validationCollectionKey,
-      normalizeCategory(
-        collection.id || ""
-      ),
-      normalizeCategory(
-        collection.name || ""
-      ),
-      normalizeCategory(
-        item.collectionId || ""
-      ),
-      normalizeCategory(
-        item.collectionSlug || ""
-      ),
-    ].some(
-      (key) =>
-        key === "companion" ||
-        key === "companioncollection" ||
-        key === "companionring"
-    ) &&
-    normalizeKey(selectedDesign) ===
-      "companion-custom-inlays";
-
-  if (
-    selectedDesign &&
-    !designIsBirthstoneLabel &&
-    !designIsCompanionWrapper
-  ) {
+  if (selectedDesign) {
     assertAllowedKeys(
       "inlay style",
       [selectedDesign],
@@ -502,6 +559,26 @@ function validateTrustedSelections(
   /*
    * PRODUCT BASE
    */
+  const trustedProductBaseCatalog =
+    (
+      collection.productBases ||
+      []
+    )
+      .map(
+        (entry) =>
+          entry?.productBase
+      )
+      .filter(Boolean);
+
+  assertSameCatalogSelection(
+    "Product base",
+    [
+      item.productBase,
+      item.productBaseId,
+    ],
+    trustedProductBaseCatalog
+  );
+
   const allowedProductBases =
     uniqueKeys(
       (
@@ -708,13 +785,7 @@ function validateTrustedSelections(
   if (item.core) {
     const selectedCoreKey =
       normalizeKey(
-        isRemiValidation
-          ? (
-            item.finish ||
-            item.core?.finish ||
-            item.core
-          )
-          : item.core
+        item.core
       );
 
     trustedCore =
@@ -725,9 +796,6 @@ function validateTrustedSelections(
             core.databaseId,
             core.slug,
             core.name,
-            isRemiValidation
-              ? core.finish
-              : null,
           ]).includes(
             selectedCoreKey
           )
@@ -739,59 +807,93 @@ function validateTrustedSelections(
       );
     }
 
-    /*
-     * Once the core itself has been
-     * matched against the trusted
-     * server-side collection data,
-     * client-supplied core metadata
-     * must not drive validation or
-     * pricing.
-     */
-    item.core = {
-      ...(typeof item.core === "object"
-        ? item.core
-        : {}),
-
-      id:
-        trustedCore.slug ||
-        trustedCore.id,
-
-      databaseId:
-        trustedCore.databaseId ||
-        trustedCore.id,
-
-      slug:
-        trustedCore.slug ||
-        trustedCore.id,
-
-      name:
-        trustedCore.name,
-
-      material:
-        trustedCore.material ||
-        null,
-
-      finish:
-        trustedCore.finish ||
-        null,
-
-      color:
-        trustedCore.color ||
-        null,
-    };
-
-    if (trustedCore.material) {
-      item.material =
-        trustedCore.material;
+    if (
+      item.material &&
+      trustedCore.material &&
+      normalizeKey(
+        item.material
+      ) !==
+      normalizeKey(
+        trustedCore.material
+      )
+    ) {
+      throw new CheckoutValidationError(
+        "Selected material does not match the selected ring core."
+      );
     }
 
     if (
-      trustedCore.finish ||
-      trustedCore.color
+      typeof item.core ===
+      "object" &&
+      item.core.material &&
+      trustedCore.material &&
+      normalizeKey(
+        item.core.material
+      ) !==
+      normalizeKey(
+        trustedCore.material
+      )
     ) {
-      item.finish =
-        trustedCore.finish ||
-        trustedCore.color;
+      throw new CheckoutValidationError(
+        "Ring core material mismatch."
+      );
+    }
+
+    if (
+      typeof item.core ===
+      "object" &&
+      item.core.finish &&
+      trustedCore.finish &&
+      normalizeKey(
+        item.core.finish
+      ) !==
+      normalizeKey(
+        trustedCore.finish
+      )
+    ) {
+      throw new CheckoutValidationError(
+        "Ring core finish mismatch."
+      );
+    }
+
+    assertMatchingSelections(
+      "Product base",
+      [
+        item.productBaseId,
+        typeof item.core === "object"
+          ? item.core.databaseId
+          : null,
+      ]
+    );
+
+    const exactDatabaseCoreMatch =
+      typeof item.core ===
+      "object" &&
+      item.core.databaseId &&
+      trustedCore.databaseId &&
+      normalizeKey(
+        item.core.databaseId
+      ) ===
+      normalizeKey(
+        trustedCore.databaseId
+      );
+
+    if (
+      !exactDatabaseCoreMatch &&
+      typeof item.core ===
+      "object" &&
+      item.core.finish &&
+      trustedCore.finish &&
+      normalizeKey(
+        item.core.finish
+      ) !==
+      normalizeKey(
+        trustedCore.finish
+      )
+    ) {
+      throw new CheckoutValidationError(
+        "Ring core finish mismatch."
+      );
     }
   }
 
@@ -898,6 +1000,15 @@ function validateTrustedSelections(
   /*
    * RING SIZE
    */
+
+  assertMatchingSelections(
+    "Ring size",
+    [
+      item.size,
+      item.ringSize,
+    ]
+  );
+
   const selectedSize =
     item.size ??
     item.ringSize;
@@ -969,18 +1080,16 @@ function validateTrustedSelections(
     ]);
 
   const submittedMemorialMaterials =
-    isKeepsakeValidation
-      ? []
-      : [
-        ...asArray(
-          item.memorialMaterials
-        ),
+    [
+      ...asArray(
+        item.memorialMaterials
+      ),
 
-        ...getChannelSelections(
-          item,
-          ["memorial"]
-        ),
-      ];
+      ...getChannelSelections(
+        item,
+        ["memorial"]
+      ),
+    ];
 
   if (
     submittedMemorialMaterials
@@ -996,6 +1105,9 @@ function validateTrustedSelections(
   /*
    * KEEPSAKE MATERIAL
    */
+
+
+
   const selectedKeepsakeMaterial =
     normalizeKey(
       item.keepsakeMaterial ||
@@ -1040,15 +1152,15 @@ function validateTrustedSelections(
           ?.allowed
       ),
 
-     ...getPricingRuleKeys(
-  collection,
-  [
-    "keepsakeMaterials",
-    "keepsakeMaterial",
-    "memorialMaterials",
-    "memorialMaterial",
-  ]
-),
+      ...getPricingRuleKeys(
+        collection,
+        [
+          "keepsakeMaterials",
+          "keepsakeMaterial",
+          "memorialMaterials",
+          "memorialMaterial",
+        ]
+      ),
 
       ...(validMineralBase
         ? ["mineralBase"]
@@ -1069,21 +1181,22 @@ function validateTrustedSelections(
     );
   }
 
-  if (isKeepsakeValidation) {
-    const canonicalKeepsakeMaterial =
-      item.keepsakeMaterial ||
-      item.keepsakeMaterialId ||
-      null;
-
-    item.memorialMaterials =
-      canonicalKeepsakeMaterial
-        ? [canonicalKeepsakeMaterial]
-        : [];
-  }
-
   /*
  * BEZEL SIZE
  */
+
+  assertMatchingSelections(
+    "Bezel size",
+    [
+      normalizeBezelKey(
+        item.bezelSize
+      ),
+      normalizeBezelKey(
+        item.bezelSizeId
+      ),
+    ]
+  );
+
   if (
     item.bezelSize ||
     item.bezelSizeId
@@ -1126,6 +1239,7 @@ function validateTrustedSelections(
   /*
    * CHAIN
    */
+
   if (
     item.chain ||
     item.chainId
@@ -1159,63 +1273,49 @@ function validateTrustedSelections(
   /*
    * HAIR PLACEMENT
    */
+
   const submittedHairPlacements =
-  uniqueKeys([
-    item.hairPlacement,
-    item.hairPlacementId,
-  ]).filter(
-    (key) =>
-      ![
-        "none",
-        "nohair",
-      ].includes(
-        normalizeCategory(key)
-      )
-  );
-
-if (
-  submittedHairPlacements.length
-) {
-  assertAllowedKeys(
-    "hair placement",
-    submittedHairPlacements,
-    [
-      ...asArray(
-        options
-          ?.hair
-          ?.allowedStyles
-      ),
-
-      ...(
-        collection.configuratorOptions ||
-        []
-      )
-        .filter(
-          (option) =>
-            option.category ===
-            "hair-placement"
+    uniqueKeys([
+      item.hairPlacement,
+      item.hairPlacementId,
+    ]).filter(
+      (key) =>
+        ![
+          "none",
+          "nohair",
+        ].includes(
+          normalizeCategory(key)
         )
-        .flatMap(
-          (option) => [
-            option.slug,
-            option.name,
-          ]
+    );
+
+  if (
+    submittedHairPlacements.length
+  ) {
+    assertAllowedKeys(
+      "hair placement",
+      submittedHairPlacements,
+      [
+        ...asArray(
+          options
+            ?.hair
+            ?.allowedStyles
         ),
 
-      ...getPricingRuleKeys(
-        collection,
-        [
-          "hairPlacement",
-          "hairPlacements",
-        ]
-      ),
-    ]
-  );
-}
+        ...getPricingRuleKeys(
+          collection,
+          [
+            "hairPlacement",
+            "hairPlacements",
+          ]
+        ),
+      ]
+    );
+  }
 
   /*
    * DECORATIVE ACCENTS
    */
+
   const submittedAccents =
     [
       ...asArray(
@@ -1241,22 +1341,6 @@ if (
           ?.decorativeAccents
           ?.allowed
       ),
-
-      ...(
-        collection.configuratorOptions ||
-        []
-      )
-        .filter(
-          (option) =>
-            option.category ===
-            "decorative-accent"
-        )
-        .flatMap(
-          (option) => [
-            option.slug,
-            option.name,
-          ]
-        ),
 
       ...getPricingRuleKeys(
         collection,
@@ -1299,6 +1383,7 @@ if (
   /*
    * ACCENT STYLE
    */
+
   if (
     item.accentStyle ||
     item.accentStyleId
@@ -1315,22 +1400,6 @@ if (
             ?.decorativeAccents
             ?.allowedStyles
         ),
-
-        ...(
-          collection.configuratorOptions ||
-          []
-        )
-          .filter(
-            (option) =>
-              option.category ===
-              "accent-style"
-          )
-          .flatMap(
-            (option) => [
-              option.slug,
-              option.name,
-            ]
-          ),
 
         ...getPricingRuleKeys(
           collection,
@@ -1476,6 +1545,110 @@ if (
         );
       }
     }
+
+    if (
+      typeof item.birthstone ===
+      "object"
+    ) {
+      const submittedMonth =
+        item.birthstone.month;
+
+      const submittedStone =
+        item.birthstone.stone;
+
+      if (
+        submittedMonth !== null &&
+        submittedMonth !== undefined &&
+        submittedMonth !== "" &&
+        submittedStone !== null &&
+        submittedStone !== undefined &&
+        submittedStone !== ""
+      ) {
+        const monthKey =
+          normalizeKey(
+            submittedMonth
+          );
+
+        const stoneKey =
+          normalizeKey(
+            submittedStone
+          );
+
+        const configuredPairs =
+          collection.birthstoneOptions ||
+          [];
+
+        const legacyPairs =
+          collection.birthstones ||
+          [];
+
+        const matchesConfiguredPair =
+          configuredPairs.some(
+            (entry) => {
+              const month =
+                entry?.birthstoneMonth;
+
+              const mineral =
+                entry?.mineral;
+
+              return (
+                month &&
+                mineral &&
+                uniqueKeys([
+                  month.id,
+                  month.name,
+                  month.monthNumber,
+                ]).includes(
+                  monthKey
+                ) &&
+                uniqueKeys([
+                  mineral.id,
+                  mineral.slug,
+                  mineral.name,
+                ]).includes(
+                  stoneKey
+                )
+              );
+            }
+          );
+
+        const matchesLegacyPair =
+          legacyPairs.some(
+            (entry) => {
+              const birthstone =
+                entry?.birthstone;
+
+              return (
+                birthstone &&
+                uniqueKeys([
+                  birthstone.monthName,
+                  birthstone.monthNumber,
+                ]).includes(
+                  monthKey
+                ) &&
+                uniqueKeys([
+                  birthstone.id,
+                  birthstone.slug,
+                  birthstone.name,
+                ]).includes(
+                  stoneKey
+                )
+              );
+            }
+          );
+
+        if (
+          configuredPairs.length > 0
+            ? !matchesConfiguredPair
+            : legacyPairs.length > 0 &&
+            !matchesLegacyPair
+        ) {
+          throw new CheckoutValidationError(
+            "Invalid birthstone month and stone combination."
+          );
+        }
+      }
+    }
   }
 }
 
@@ -1545,14 +1718,14 @@ function getSelectedKeysByCategory(
     ]),
 
     keepsakematerials: uniqueKeys([
-      item.keepsakeMaterial,
+      item.keepsakeMaterial ||
       item.keepsakeMaterialId,
     ]),
 
     minerals: uniqueKeys([
       ...asArray(item.minerals),
-      item.mineral,
-      item.naturalMineral,
+      item.mineral ||
+      item.naturalMineral ||
       item.naturalMineralId,
 
       ...getChannelSelections(
@@ -1575,9 +1748,9 @@ function getSelectedKeysByCategory(
 
     finishes:
       uniqueKeys([
+        core.finish ||
+        core.color ||
         item.finish,
-        core.finish,
-        core.color,
       ]),
 
     engraving:
@@ -1601,68 +1774,68 @@ function getSelectedKeysByCategory(
       ]),
 
     chain:
-  uniqueKeys([
-    item.chain,
-    item.chainId,
-  ]),
+      uniqueKeys([
+        item.chainId ||
+        item.chain,
+      ]),
 
-chains:
-  uniqueKeys([
-    item.chain,
-    item.chainId,
-  ]),
+    chains:
+      uniqueKeys([
+        item.chainId ||
+        item.chain,
+      ]),
 
-chainoption:
-  uniqueKeys([
-    item.chain,
-    item.chainId,
-  ]),
+    chainoption:
+      uniqueKeys([
+        item.chainId ||
+        item.chain,
+      ]),
 
-chainoptions:
-  uniqueKeys([
-    item.chain,
-    item.chainId,
-  ]),
+    chainoptions:
+      uniqueKeys([
+        item.chainId ||
+        item.chain,
+      ]),
 
     hairplacement:
       uniqueKeys([
-        item.hairPlacement,
+        item.hairPlacement ||
         item.hairPlacementId,
       ]),
 
     hairplacements:
       uniqueKeys([
-        item.hairPlacement,
+        item.hairPlacement ||
         item.hairPlacementId,
       ]),
 
     decorativeaccent:
       uniqueKeys([
-        item.decorativeAccent,
+        item.decorativeAccent ||
         item.decorativeAccentId,
       ]),
 
     decorativeaccents:
       uniqueKeys([
-        item.decorativeAccent,
+        item.decorativeAccent ||
         item.decorativeAccentId,
       ]),
 
     accentstyle:
       uniqueKeys([
-        item.accentStyle,
+        item.accentStyle ||
         item.accentStyleId,
       ]),
 
     accentstyles:
       uniqueKeys([
-        item.accentStyle,
+        item.accentStyle ||
         item.accentStyleId,
       ]),
 
     productbases:
       uniqueKeys([
-        item.productBase,
+        item.productBase ||
         item.productBaseId,
       ]),
 
@@ -2006,21 +2179,21 @@ function calculateTrustedPriceCents(
     );
 
   const isRemiCollection =
-  [
-    "remi",
-    "theremiring",
-    "heirloom",
-    "heirloomnecklace",
-    "legacycross",
-    "legacyheart",
-  ].includes(
-    trustedCollectionKey
-  ) ||
-  normalizeCategory(
-    collection.name
-  ).includes(
-    "remi"
-  );
+    [
+      "remi",
+      "theremiring",
+      "heirloom",
+      "heirloomnecklace",
+      "legacycross",
+      "legacyheart",
+    ].includes(
+      trustedCollectionKey
+    ) ||
+    normalizeCategory(
+      collection.name
+    ).includes(
+      "remi"
+    );
 
   const remiCatalogCategories =
     new Set([
@@ -2129,20 +2302,20 @@ function calculateTrustedPriceCents(
         "specialRequest"
       ) &&
       (
-  (
-    category === "general" &&
-    optionKey === "specialrequest"
-  ) ||
-  category === "specialrequest" ||
-  category === "specialrequests" ||
-  (
-    (
-      category === "keepsakematerials" ||
-      category === "keepsakematerial"
-    ) &&
-    optionKey === "specialrequest"
-  )
-)
+        (
+          category === "general" &&
+          optionKey === "specialrequest"
+        ) ||
+        category === "specialrequest" ||
+        category === "specialrequests" ||
+        (
+          (
+            category === "keepsakematerials" ||
+            category === "keepsakematerial"
+          ) &&
+          optionKey === "specialrequest"
+        )
+      )
     ) {
       continue;
     }
@@ -2380,8 +2553,8 @@ function calculateTrustedPriceCents(
         item.minerals
       ),
 
-      item.mineral,
-      item.naturalMineral,
+      item.mineral ||
+      item.naturalMineral ||
       item.naturalMineralId,
 
       ...getChannelSelections(
@@ -2429,8 +2602,12 @@ function calculateTrustedPriceCents(
         item.accentMaterials
       ),
 
-      item.decorativeAccent,
-      item.decorativeAccentId,
+      ...(isRemiCollection
+        ? []
+        : [
+          item.decorativeAccent ||
+          item.decorativeAccentId,
+        ]),
 
       ...getChannelSelections(
         item,
@@ -3032,21 +3209,21 @@ async function getTrustedCollection(
     );
 
   const isRemiCollection =
-  [
-    "remi",
-    "theremiring",
-    "heirloom",
-    "heirloomnecklace",
-    "legacycross",
-    "legacyheart",
-  ].includes(
-    trustedCollectionKey
-  ) ||
-  normalizeCategory(
-    collection.name
-  ).includes(
-    "remi"
-  );
+    [
+      "remi",
+      "theremiring",
+      "heirloom",
+      "heirloomnecklace",
+      "legacycross",
+      "legacyheart",
+    ].includes(
+      trustedCollectionKey
+    ) ||
+    normalizeCategory(
+      collection.name
+    ).includes(
+      "remi"
+    );
 
   const configuratorOptions =
     isRemiCollection
@@ -3090,9 +3267,14 @@ async function getTrustedCollection(
   };
 }
 
-export async function POST(request) {
+export async function POST(
+  request
+) {
   /*
    * CHECKOUT RATE LIMIT
+   *
+   * Vercel supplies the real client IP in
+   * x-vercel-forwarded-for.
    *
    * Limit: 10 checkout attempts per minute
    * per IP address.
@@ -3168,389 +3350,984 @@ export async function POST(request) {
   }
 
   try {
-    const { cart, customerNote } = await request.json();
+    const {
+      cart,
+      customerNote,
+    } =
+      await request.json();
 
-    if (!Array.isArray(cart) || cart.length === 0) {
+    if (
+      !Array.isArray(
+        cart
+      ) ||
+      cart.length === 0
+    ) {
       return Response.json(
-        { error: "Cart is empty." },
-        { status: 400 }
+        {
+          error:
+            "Cart is empty.",
+        },
+        {
+          status: 400,
+        }
       );
     }
 
-    if (cart.length > 25) {
+    if (
+      cart.length > 25
+    ) {
       return Response.json(
-        { error: "Cart contains too many items." },
-        { status: 400 }
+        {
+          error:
+            "Cart contains too many items.",
+        },
+        {
+          status: 400,
+        }
       );
     }
 
+    if (
+      cart.some(
+        (item) =>
+          !item ||
+          typeof item !== "object" ||
+          Array.isArray(item)
+      )
+    ) {
+      return Response.json(
+        {
+          error:
+            "Cart contains an invalid item.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    if (
+      cart.some(
+        (item) =>
+          JSON.stringify(item)
+            .length > 50000
+      )
+    ) {
+      return Response.json(
+        {
+          error:
+            "Cart item data is too large.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    for (const item of cart) {
+      if (
+        item.quantity !== null &&
+        item.quantity !== undefined
+      ) {
+        const quantity =
+          Number(
+            item.quantity
+          );
+
+        if (
+          !Number.isInteger(
+            quantity
+          ) ||
+          quantity < 1 ||
+          quantity > 10
+        ) {
+          return Response.json(
+            {
+              error:
+                "Invalid cart item quantity.",
+            },
+            {
+              status: 400,
+            }
+          );
+        }
+      }
+    }
+
+    if (
+      customerNote !== null &&
+      customerNote !== undefined &&
+      typeof customerNote !==
+      "string"
+    ) {
+      return Response.json(
+        {
+          error:
+            "Invalid customer note.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    if (
+      typeof customerNote ===
+      "string" &&
+      customerNote.length > 2000
+    ) {
+      return Response.json(
+        {
+          error:
+            "Customer note is too long.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    /*
+     * CURRENT SITE SETTINGS
+     */
     const siteSettings =
-      await getCheckoutSiteSettings();
+      await prisma
+        .siteSettings
+        .findUnique({
+          where: {
+            id:
+              "site-settings",
+          },
 
-    const salePercent =
-      siteSettings.sitewideSaleEnabled
-        ? normalizeSalePercent(
-            siteSettings.sitewideSalePercent
-          )
-        : 0;
+          select: {
+            standardShippingPriceCents:
+              true,
+
+            priorityShippingPriceCents:
+              true,
+
+            shippingInstructions:
+              true,
+
+            sitewideSaleEnabled:
+              true,
+
+            sitewideSalePercent:
+              true,
+
+            sitewideSaleName:
+              true,
+          },
+        });
+
+    const standardShippingPriceCents =
+      Math.max(
+        0,
+        Number(
+          siteSettings
+            ?.standardShippingPriceCents ??
+          800
+        )
+      );
+
+    const priorityShippingPriceCents =
+      Math.max(
+        0,
+        Number(
+          siteSettings
+            ?.priorityShippingPriceCents ??
+          1500
+        )
+      );
+
+    const shippingInstructions =
+      siteSettings
+        ?.shippingInstructions
+        ?.trim() ||
+      "";
+
+    /*
+     * SITE-WIDE SALE
+     */
+    const sitewideSalePercent =
+      normalizeSalePercent(
+        siteSettings
+          ?.sitewideSalePercent
+      );
+
+    const sitewideSaleActive =
+      Boolean(
+        siteSettings
+          ?.sitewideSaleEnabled
+      ) &&
+      sitewideSalePercent >
+      0;
+
+    const sitewideSaleName =
+      String(
+        siteSettings
+          ?.sitewideSaleName ||
+        ""
+      ).trim() ||
+      "Site-Wide Sale";
 
     const lineItems =
       await Promise.all(
-        cart.map(async (item) => {
-          if (
-            !item ||
-            typeof item !== "object" ||
-            Array.isArray(item)
-          ) {
-            throw new CheckoutValidationError(
-              "Invalid cart item."
-            );
-          }
+        cart.map(
+          async (item) => {
+            const trustedCollection =
+              await getTrustedCollection(
+                item
+              );
 
-          const trustedCollection =
-            await getTrustedCollection(item);
+            const collectionId =
+              trustedCollection
+                .id
+                .toLowerCase();
 
-          /*
-           * SECURITY VALIDATION
-           *
-           * The browser may carry display values in the
-           * cart, but collection/options/pricing are
-           * validated and rebuilt from trusted server data
-           * before Stripe receives an amount.
-           */
-          validateTrustedSelections(
-            item,
-            trustedCollection
-          );
+            const collectionSlug =
+              trustedCollection
+                .slug
+                .toLowerCase();
 
-          const regularPriceCents =
-            calculateTrustedPriceCents(
+            const collectionName =
+              trustedCollection
+                .name
+                .toLowerCase();
+
+            const isKeepsakeBranch =
+              collectionId.includes(
+                "keepsake-branch"
+              ) ||
+              collectionSlug.includes(
+                "keepsake-branch"
+              ) ||
+              collectionName.includes(
+                "keepsake branch"
+              );
+
+            const isEvermoreRing =
+              (
+                collectionId.includes(
+                  "evermore"
+                ) &&
+                collectionId.includes(
+                  "ring"
+                )
+              ) ||
+              (
+                collectionSlug.includes(
+                  "evermore"
+                ) &&
+                collectionSlug.includes(
+                  "ring"
+                )
+              ) ||
+              (
+                collectionName.includes(
+                  "evermore"
+                ) &&
+                collectionName.includes(
+                  "ring"
+                )
+              );
+
+            const trustedCollectionKey =
+              normalizeCategory(
+                trustedCollection.slug ||
+                trustedCollection.id ||
+                trustedCollection.name
+              );
+
+            const isRemi =
+              [
+                "remi",
+                "theremiring",
+                "heirloom",
+                "heirloomnecklace",
+                "legacycross",
+                "legacyheart",
+              ].includes(
+                trustedCollectionKey
+              ) ||
+              normalizeCategory(
+                trustedCollection.name
+              ).includes(
+                "remi"
+              );
+
+            const isKeepsake =
+              trustedCollectionKey ===
+              "keepsake";
+
+            /*
+             * SECURITY VALIDATION
+             */
+            validateTrustedSelections(
               item,
               trustedCollection
             );
 
-          const quantity =
-            Number(item.quantity ?? 1);
+            /*
+             * TRUSTED SERVER PRICE
+             */
+            const regularPriceCents =
+              calculateTrustedPriceCents(
+                item,
+                trustedCollection
+              );
 
-          if (
-            !Number.isInteger(quantity) ||
-            quantity < 1 ||
-            quantity > 10
-          ) {
-            throw new CheckoutValidationError(
-              "Invalid item quantity."
-            );
+            /*
+             * AUTHORITATIVE SALE
+             */
+            const unitAmountCents =
+              sitewideSaleActive
+                ? Math.round(
+                  (
+                    regularPriceCents *
+                    (
+                      100 -
+                      sitewideSalePercent
+                    )
+                  ) /
+                  100
+                )
+                : regularPriceCents;
+
+            if (
+              !Number.isInteger(
+                unitAmountCents
+              ) ||
+              unitAmountCents <=
+              0
+            ) {
+              throw new Error(
+                `Invalid discounted price for ${trustedCollection.name}.`
+              );
+            }
+
+            const description =
+              isKeepsakeBranch
+                ? buildKeepsakeBranchDescription(
+                  item
+                )
+                : isEvermoreRing
+                  ? buildEvermoreRingDescription(
+                    item
+                  )
+                  : isRemi
+                    ? buildRemiDescription(
+                      item
+                    )
+                    : isKeepsake
+                      ? buildKeepsakeDescription(
+                        item
+                      )
+                      : buildStandardRingDescription(
+                        item
+                      );
+
+            return {
+              price_data: {
+                currency:
+                  "usd",
+
+                product_data: {
+                  name:
+                    trustedCollection
+                      .name ||
+                    "Custom Memorial Jewelry",
+
+                  description,
+
+                  metadata: {
+                    collectionName:
+                      String(
+                        trustedCollection
+                          .name ||
+                        ""
+                      ).slice(
+                        0,
+                        500
+                      ),
+
+                    collection:
+                      String(
+                        trustedCollection
+                          .slug ||
+                        trustedCollection
+                          .id ||
+                        ""
+                      ).slice(
+                        0,
+                        500
+                      ),
+
+                    productType:
+                      String(
+                        item.productType ||
+                        (
+                          isKeepsakeBranch
+                            ? collectionName
+                              .includes(
+                                "necklace"
+                              )
+                              ? "necklace"
+                              : "ring"
+                            : isEvermoreRing
+                              ? "evermore-ring"
+                              : isRemi
+                                ? "remi"
+                                : isKeepsake
+                                  ? "keepsake"
+                                  : "ring"
+                        )
+                      ).slice(
+                        0,
+                        500
+                      ),
+
+                    material:
+                      String(
+                        item.material ||
+                        item.finish ||
+                        ""
+                      ).slice(
+                        0,
+                        500
+                      ),
+
+                    core:
+                      String(
+                        typeof item.core ===
+                          "object"
+                          ? item.core
+                            ?.name ||
+                          item.core
+                            ?.id ||
+                          item.core
+                            ?.color ||
+                          ""
+                          : item.core ||
+                          ""
+                      ).slice(
+                        0,
+                        500
+                      ),
+
+                    style:
+                      String(
+                        item.design
+                          ?.name ||
+                        item.designName ||
+                        item
+                          .inlayStyleName ||
+                        ""
+                      ).slice(
+                        0,
+                        500
+                      ),
+
+                    width:
+                      String(
+                        typeof item.width ===
+                          "object"
+                          ? item.width
+                            ?.width ??
+                          ""
+                          : item.width ??
+                          ""
+                      ).slice(
+                        0,
+                        500
+                      ),
+
+                    size:
+                      String(
+                        item.size ??
+                        ""
+                      ).slice(
+                        0,
+                        500
+                      ),
+
+                    metalFinish:
+                      String(
+                        item.finish ||
+                        item.core?.finish ||
+                        item.core?.color ||
+                        ""
+                      ).slice(
+                        0,
+                        500
+                      ),
+
+                    bezelSize:
+                      String(
+                        item.bezelSizeName ||
+                        item.bezelSize ||
+                        ""
+                      ).slice(
+                        0,
+                        500
+                      ),
+
+                    keepsakeMaterial:
+                      String(
+                        formatKeepsakeMaterial(
+                          item.keepsakeMaterial
+                        )
+                      ).slice(
+                        0,
+                        500
+                      ),
+
+                    birthstone:
+                      String(
+                        item.birthstone
+                          ? `${item.birthstone.month} — ${item.birthstone.stone}`
+                          : ""
+                      ).slice(
+                        0,
+                        500
+                      ),
+
+                    memorialMaterials:
+                      buildMetadataList(
+                        item.memorialMaterials
+                      ),
+
+                    minerals:
+                      buildMetadataList(
+                        item.minerals
+                      ),
+
+                    accentMaterials:
+                      buildMetadataList(
+                        item.accentMaterials
+                      ),
+
+                    glow:
+                      String(
+                        item.glow
+                          ?.name ||
+                        item.glow
+                          ?.id ||
+                        item.glowName ||
+                        (
+                          typeof item.glow ===
+                            "string"
+                            ? item.glow
+                            : ""
+                        )
+                      ).slice(
+                        0,
+                        500
+                      ),
+
+                    engraving:
+                      String(
+                        !item
+                          .engravingEnabled
+                          ? ""
+                          : item
+                            .engravingType ===
+                            "customSignature"
+                            ? "Handwritten Signature"
+                            : item
+                              .engravingText ||
+                            "Yes"
+                      ).slice(
+                        0,
+                        500
+                      ),
+
+                    engravingFont:
+                      String(
+                        item
+                          .engravingFont
+                          ?.name ||
+                        item
+                          .engravingFont
+                          ?.id ||
+                        ""
+                      ).slice(
+                        0,
+                        500
+                      ),
+
+                    channels:
+                      buildChannelMetadata(
+                        item
+                      ).slice(
+                        0,
+                        500
+                      ),
+
+                    specialRequest:
+                      item.specialRequest
+                        ? "Yes"
+                        : "No",
+
+                    regularPriceCents:
+                      String(
+                        regularPriceCents
+                      ),
+
+                    checkoutPriceCents:
+                      String(
+                        unitAmountCents
+                      ),
+
+                    sitewideSaleApplied:
+                      sitewideSaleActive
+                        ? "Yes"
+                        : "No",
+
+                    sitewideSalePercent:
+                      sitewideSaleActive
+                        ? String(
+                          sitewideSalePercent
+                        )
+                        : "0",
+
+                    sitewideSaleName:
+                      sitewideSaleActive
+                        ? sitewideSaleName
+                          .slice(
+                            0,
+                            500
+                          )
+                        : "",
+
+                    itemDescription:
+                      description.slice(
+                        0,
+                        500
+                      ),
+                  },
+                },
+
+                unit_amount:
+                  unitAmountCents,
+              },
+
+              quantity:
+                Math.min(
+                  10,
+                  Math.max(
+                    1,
+                    Math.floor(
+                      Number(
+                        item.quantity
+                      ) || 1
+                    )
+                  )
+                ),
+            };
           }
-
-          const trustedCollectionKey =
-            normalizeCategory(
-              trustedCollection.slug ||
-              trustedCollection.id ||
-              trustedCollection.name
-            );
-
-      const isRemi =
-        [
-          "remi",
-          "theremiring",
-          "heirloom",
-          "heirloomnecklace",
-          "legacycross",
-          "legacyheart",
-        ].includes(trustedCollectionKey) ||
-        normalizeCategory(
-          trustedCollection.name
-        ).includes("remi") ||
-        Boolean(
-          item.bezelSize ||
-          item.hairPlacement ||
-          item.decorativeAccent ||
-          item.accentStyle
-        );
-
-      const isKeepsake =
-        [
-          "evermorering",
-          "evermorebracelet",
-          "evermorenecklace",
-          "keepsakebranch",
-          "keepsakebranchring",
-          "keepsakebranchnecklace",
-          "keepsake",
-        ].includes(
-          trustedCollectionKey
-        );
-
-      const description = isRemi
-        ? buildRemiDescription(item)
-        : isKeepsake
-          ? buildKeepsakeDescription(item)
-          : buildStandardRingDescription(item);
-
-      const unitAmount =
-        salePercent > 0
-          ? Math.round(
-              regularPriceCents *
-                ((100 - salePercent) / 100)
-            )
-          : regularPriceCents;
-
-      if (
-        !Number.isInteger(unitAmount) ||
-        unitAmount <= 0
-      ) {
-        throw new Error(
-          `Invalid server price for ${trustedCollection.name}.`
-        );
-      }
-
-      const coreStyle =
-        typeof item.core === "object"
-          ? [
-              item.core?.color,
-              item.core?.edge ||
-                item.core?.finish,
-            ]
-              .filter(Boolean)
-              .join(" ")
-          : "";
-
-      const coreName =
-        typeof item.core === "object"
-          ? item.core?.name ||
-            coreStyle ||
-            formatOptionName(item.core?.id) ||
-            ""
-          : formatOptionName(item.core);
-
-      const designName =
-        item.design?.name ||
-        item.designName ||
-        item.inlayStyleName ||
-        "";
-
-      const widthValue =
-        typeof item.width === "object"
-          ? item.width?.width
-          : item.width;
-
-      const channelWidth =
-        item.channelWidth ??
-        item.width?.channel;
-
-      return {
-        price_data: {
-          currency: "usd",
-          product_data: {
-  name:
-    trustedCollection.name ||
-    "Custom Memorial Jewelry",
-
-  description,
-
-  metadata: {
-  collectionName: String(
-    trustedCollection.name || ""
-  ).slice(0, 500),
-
-  collection: String(
-    trustedCollection.slug ||
-      trustedCollection.id ||
-      ""
-  ).slice(0, 500),
-
-  productType: String(
-    item.productType ||
-      (isRemi ? "remi" : isKeepsake ? "keepsake" : "ring")
-  ).slice(0, 500),
-
-  material: String(
-    item.material ||
-      item.finish ||
-      ""
-  ).slice(0, 500),
-
-  core: String(coreName).slice(0, 500),
-
-  style: String(
-    coreStyle ||
-      formatOptionName(item.core?.id) ||
-      ""
-  ).slice(0, 500),
-
-  design: String(
-    designName
-  ).slice(0, 500),
-
-  width: String(
-    widthValue != null && widthValue !== ""
-      ? `${widthValue}mm`
-      : ""
-  ).slice(0, 500),
-
-  channelWidth: String(
-    channelWidth != null && channelWidth !== ""
-      ? `${channelWidth}mm`
-      : ""
-  ).slice(0, 500),
-
-  size: String(
-    item.size ?? ""
-  ).slice(0, 500),
-
-  memorialMaterials: buildMetadataList(
-    item.memorialMaterials,
-    formatMemorialMaterial
-  ),
-
-  minerals: buildMetadataList(
-    item.minerals,
-    formatOptionName
-  ),
-
-  accentMaterials: buildMetadataList(
-    item.accentMaterials,
-    formatAccentMaterial
-  ),
-
-  glow: String(
-    item.glow?.name ||
-      item.glow?.id ||
-      item.glowName ||
-      (typeof item.glow === "string"
-        ? item.glow
-        : "")
-  ).slice(0, 500),
-
-  engraving: String(
-    !item.engravingEnabled
-      ? ""
-      : item.engravingType === "customSignature"
-        ? "Handwritten Signature"
-        : item.engravingText || "Yes"
-  ).slice(0, 500),
-
-  engravingFont: String(
-    item.engravingFont?.name ||
-      formatOptionName(
-        item.engravingFont?.id
-      ) ||
-      ""
-  ).slice(0, 500),
-
-  channels: buildChannelMetadata(item).slice(
-    0,
-    500
-  ),
-
-  regularPriceCents: String(
-    regularPriceCents
-  ),
-
-  checkoutPriceCents: String(
-    unitAmount
-  ),
-
-  specialRequest: item.specialRequest
-    ? `Yes (+$${Number(
-        item.specialRequestPrice || 30
-      ).toFixed(0)})`
-    : "No",
-
-  itemDescription: description.slice(0, 500),
-},
-},
-unit_amount: unitAmount,
-},
-quantity,
-};
-        })
+        )
       );
 
     const origin =
-      new URL(request.url).origin;
-
-    const allowedCountries =
-      siteSettings.usShippingOnly
-        ? ["US"]
-        : STRIPE_ALLOWED_SHIPPING_COUNTRIES;
-
-    const shippingOptions = [
-      {
-        shipping_rate_data: {
-          type: "fixed_amount",
-          fixed_amount: {
-            amount:
-              siteSettings.standardShippingPriceCents,
-            currency: "usd",
-          },
-          display_name:
-            "USPS Ground Advantage",
-        },
-      },
-      {
-        shipping_rate_data: {
-          type: "fixed_amount",
-          fixed_amount: {
-            amount:
-              siteSettings.priorityShippingPriceCents,
-            currency: "usd",
-          },
-          display_name:
-            "USPS Priority Mail",
-        },
-      },
-    ];
+      new URL(
+        request.url
+      ).origin;
 
     const session =
-      await stripe.checkout.sessions.create({
-        mode: "payment",
-        line_items: lineItems,
-        shipping_address_collection: {
-          allowed_countries: allowedCountries,
-        },
-        shipping_options: shippingOptions,
-        metadata: {
-          customerNote: String(
-            customerNote || ""
-          ).slice(0, 500),
-          saleName: String(
-            siteSettings.sitewideSaleName || ""
-          ).slice(0, 500),
-          salePercent: String(salePercent),
-          turnaroundMinWeeks: String(
-            siteSettings.turnaroundMinWeeks
-          ),
-          turnaroundMaxWeeks: String(
-            siteSettings.turnaroundMaxWeeks
-          ),
-        },
-        success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${origin}/cart`,
-      });
+      await stripe
+        .checkout
+        .sessions
+        .create({
+          mode:
+            "payment",
 
-    return Response.json({ url: session.url });
+          line_items:
+            lineItems,
+
+          shipping_address_collection:
+          {
+            allowed_countries:
+              [
+                "US",
+              ],
+          },
+
+          /*
+           * SHIPPING IS NOT
+           * DISCOUNTED.
+           */
+          shipping_options:
+            [
+              {
+                shipping_rate_data:
+                {
+                  type:
+                    "fixed_amount",
+
+                  fixed_amount:
+                  {
+                    amount:
+                      standardShippingPriceCents,
+
+                    currency:
+                      "usd",
+                  },
+
+                  display_name:
+                    "USPS Ground Advantage",
+                },
+              },
+
+              {
+                shipping_rate_data:
+                {
+                  type:
+                    "fixed_amount",
+
+                  fixed_amount:
+                  {
+                    amount:
+                      priorityShippingPriceCents,
+
+                    currency:
+                      "usd",
+                  },
+
+                  display_name:
+                    "USPS Priority Mail",
+                },
+              },
+            ],
+
+          ...(
+            shippingInstructions
+              ? {
+                custom_text: {
+                  shipping_address:
+                  {
+                    message:
+                      shippingInstructions
+                        .slice(
+                          0,
+                          1200
+                        ),
+                  },
+                },
+              }
+              : {}
+          ),
+
+          metadata: {
+            customerNote:
+              String(
+                customerNote ||
+                ""
+              ).slice(
+                0,
+                500
+              ),
+
+            sitewideSaleApplied:
+              sitewideSaleActive
+                ? "Yes"
+                : "No",
+
+            sitewideSalePercent:
+              sitewideSaleActive
+                ? String(
+                  sitewideSalePercent
+                )
+                : "0",
+
+            sitewideSaleName:
+              sitewideSaleActive
+                ? sitewideSaleName
+                  .slice(
+                    0,
+                    500
+                  )
+                : "",
+          },
+
+          success_url:
+            `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+
+          cancel_url:
+            `${origin}/cart`,
+        });
+
+    return Response.json({
+      url:
+        session.url,
+    });
   } catch (error) {
-    console.error("Stripe checkout error:", error);
+    console.error(
+      "Stripe checkout error:",
+      error
+    );
 
     if (
       error instanceof
       CheckoutValidationError
     ) {
       return Response.json(
-        { error: error.message },
-        { status: 400 }
+        {
+          error:
+            error.message,
+        },
+        {
+          status: 400,
+        }
       );
     }
 
     return Response.json(
-      { error: "Unable to create checkout session." },
-      { status: 500 }
+      {
+        error:
+          "Unable to create checkout session.",
+      },
+      {
+        status: 500,
+      }
     );
   }
 }
 
-function buildRemiDescription(item) {
+function buildKeepsakeBranchDescription(
+  item
+) {
+  const collectionName =
+    String(
+      item.collectionName ||
+      ""
+    ).toLowerCase();
+
+  const isNecklace =
+    item.productType ===
+    "necklace" ||
+    collectionName.includes(
+      "necklace"
+    );
+
+  const metalFinish =
+    item.finish ||
+    item.core?.finish ||
+    item.core?.color ||
+    "";
+
+  const keepsakeMaterial =
+    formatKeepsakeMaterial(
+      item.keepsakeMaterial
+    );
+
+  const sizeLabel =
+    isNecklace
+      ? "Necklace Length"
+      : "Ring Size";
+
+  const sizeValue =
+    item.size ||
+    (
+      isNecklace
+        ? '16" with 2" extender'
+        : "Adjustable"
+    );
+
+  const birthstone =
+    item.birthstone
+      ? `${item.birthstone.month} — ${item.birthstone.stone}`
+      : "";
+
+  const engraving =
+    item.engraving?.text ||
+    item.engraving?.name ||
+    "";
+
+  const lines = [
+    metalFinish
+      ? `Metal Finish: ${metalFinish}`
+      : null,
+
+    keepsakeMaterial
+      ? `Keepsake Material: ${keepsakeMaterial}`
+      : null,
+
+    sizeValue
+      ? `${sizeLabel}: ${sizeValue}`
+      : null,
+
+    birthstone
+      ? `Birthstone: ${birthstone}`
+      : null,
+
+    engraving
+      ? `Engraving: ${engraving}`
+      : null,
+
+    item.specialRequest
+      ? "Special Request: Yes"
+      : null,
+  ];
+
+  return lines
+    .filter(Boolean)
+    .join(" • ");
+}
+
+function buildEvermoreRingDescription(
+  item
+) {
+  const metalFinish =
+    item.finish ||
+    item.core?.finish ||
+    item.core?.color ||
+    "";
+
+  const keepsakeMaterial =
+    formatKeepsakeMaterial(
+      item.keepsakeMaterial
+    );
+
+  const birthstone =
+    item.birthstone
+      ? `${item.birthstone.month} — ${item.birthstone.stone}`
+      : "";
+
+  const lines = [
+    item.material
+      ? `Material: ${item.material}`
+      : null,
+
+    metalFinish
+      ? `Metal Finish: ${metalFinish}`
+      : null,
+
+    item.size
+      ? `Ring Size: ${item.size}`
+      : null,
+
+    keepsakeMaterial
+      ? `Keepsake Material: ${keepsakeMaterial}`
+      : null,
+
+    birthstone
+      ? `Birthstone: ${birthstone}`
+      : null,
+
+    item.specialRequest
+      ? "Special Request: Yes"
+      : null,
+  ];
+
+  return lines
+    .filter(Boolean)
+    .join(" • ");
+}
+
+function buildRemiDescription(
+  item
+) {
   const mineralName =
     item.mineral?.name ||
     item.naturalMineral ||
@@ -3559,86 +4336,117 @@ function buildRemiDescription(item) {
 
   const keepsakeBase =
     item.keepsakeMaterialName ||
-    formatKeepsakeMaterial(item.keepsakeMaterial) ||
+    formatKeepsakeMaterial(
+      item.keepsakeMaterial
+    ) ||
     "Not selected";
 
   const glowName =
     item.glow?.name ||
     item.glowName ||
-    (typeof item.glow === "string"
-      ? formatOptionName(item.glow)
-      : "") ||
+    (
+      typeof item.glow ===
+        "string"
+        ? formatOptionName(
+          item.glow
+        )
+        : ""
+    ) ||
     "No Glow";
 
   const lines = [
-    item.finish || item.material
-      ? `Metal Finish: ${item.finish || item.material}`
+    item.finish ||
+      item.material
+      ? `Metal Finish: ${item.finish ||
+      item.material
+      }`
       : null,
 
-    item.size ? `Ring Size: ${item.size}` : null,
-
-    item.bezelSize
-      ? `Bezel Size: ${item.bezelSize}`
+    item.size
+      ? `Ring Size: ${item.size}`
       : null,
 
-      item.chain
-  ? `Chain: ${item.chain}`
-  : null,
-  
+    item.bezelSizeName ||
+      item.bezelSize
+      ? `Bezel Size: ${item.bezelSizeName ||
+      item.bezelSize
+      }`
+      : null,
+
+    item.chain
+      ? `Chain: ${item.chain}`
+      : null,
+
     `Keepsake Base: ${keepsakeBase}`,
 
-    item.hairPlacementName || item.hairPlacement
-      ? `Hair Placement: ${
-          item.hairPlacementName ||
-          formatOptionName(item.hairPlacement)
-        }`
+    item.hairPlacementName ||
+      item.hairPlacement
+      ? `Hair Placement: ${item.hairPlacementName ||
+      formatOptionName(
+        item.hairPlacement
+      )
+      }`
       : null,
 
-    item.keepsakeMaterial !== "mineralBase" &&
-    mineralName
+    item.keepsakeMaterial !==
+      "mineralBase" &&
+      mineralName
       ? `Natural Mineral: ${mineralName}`
       : null,
 
-    `Decorative Accent: ${
-      item.decorativeAccentName ||
-      formatOptionName(item.decorativeAccent) ||
-      "None"
+    `Decorative Accent: ${item.decorativeAccentName ||
+    formatOptionName(
+      item.decorativeAccent
+    ) ||
+    "None"
     }`,
 
-    item.decorativeAccent !== "none" &&
-    (item.accentStyleName || item.accentStyle)
-      ? `Accent Style: ${
-          item.accentStyleName ||
-          formatOptionName(item.accentStyle)
-        }`
+    item.decorativeAccent !==
+      "none" &&
+      (
+        item.accentStyleName ||
+        item.accentStyle
+      )
+      ? `Accent Style: ${item.accentStyleName ||
+      formatOptionName(
+        item.accentStyle
+      )
+      }`
       : null,
 
     `Glow Effect: ${glowName}`,
 
     item.specialRequest
       ? `Special Request: Yes (+$${Number(
-          item.specialRequestPrice || 30
-        ).toFixed(0)})`
+        item.specialRequestPrice ||
+        30
+      ).toFixed(0)})`
       : null,
   ];
 
-  return lines.filter(Boolean).join(" | ");
+  return lines
+    .filter(Boolean)
+    .join(" • ");
 }
 
-function buildKeepsakeDescription(item) {
+function buildKeepsakeDescription(
+  item
+) {
   const lines = [
     item.material
       ? `Material: ${item.material}`
       : null,
 
-    item.size ? `Size: ${item.size}` : null,
+    item.size
+      ? `Size: ${item.size}`
+      : null,
 
     `Keepsake Material: ${formatKeepsakeMaterial(
       item.keepsakeMaterial
     )}`,
 
     item.birthstone
-      ? `Birthstone: ${item.birthstone.month} - ${item.birthstone.stone}`
+      ? `Birthstone: ${item.birthstone.month} • ${item.birthstone.stone}`
       : null,
 
     item.specialRequest
@@ -3646,67 +4454,94 @@ function buildKeepsakeDescription(item) {
       : null,
   ];
 
-  return lines.filter(Boolean).join(" | ");
+  return lines
+    .filter(Boolean)
+    .join(" • ");
 }
 
-function buildStandardRingDescription(item) {
+function buildStandardRingDescription(
+  item
+) {
   const style =
-    `${item.core?.color ? `${item.core.color} ` : ""}${
-      item.core?.edge || item.core?.finish || ""
-    }`.trim();
+    `${item.core?.color
+      ? `${item.core.color} `
+      : ""
+      }${item.core?.edge ||
+      item.core?.finish ||
+      ""
+      }`.trim();
 
   const channelWidth =
-    item.channelWidth ?? item.width?.channel;
+    item.channelWidth ??
+    item.width?.channel;
 
   const channelDescriptions =
-    buildChannelDescriptions(item);
+    buildChannelDescriptions(
+      item
+    );
 
   const accentMaterialNames =
     item.accentMaterials?.length
       ? item.accentMaterials
-          .map((accent) => {
+        .map(
+          (accent) => {
             const value =
-              typeof accent === "string"
+              typeof accent ===
+                "string"
                 ? accent
                 : accent?.id;
 
             return (
               accent?.name ||
-              formatAccentMaterial(value)
+              formatAccentMaterial(
+                value
+              )
             );
-          })
-          .filter(Boolean)
-          .join(", ")
+          }
+        )
+        .filter(Boolean)
+        .join(", ")
       : "None";
 
   const engravingDescription =
     !item.engravingEnabled
       ? "None"
-      : item.engravingType === "customSignature"
+      : item.engravingType ===
+        "customSignature"
         ? "Handwritten Signature"
-        : item.engravingText || "Yes";
+        : item.engravingText ||
+        "Yes";
 
   const hasChannelDescriptions =
-    channelDescriptions.length > 0;
+    channelDescriptions.length >
+    0;
 
   const lines = [
     item.material
       ? `Material: ${item.material}`
       : null,
 
-    style ? `Style: ${style}` : null,
+    style
+      ? `Style: ${style}`
+      : null,
 
-    item.width?.width != null
+    item.width?.width !=
+      null
       ? `Width: ${item.width.width}mm`
-      : typeof item.width === "number"
+      : typeof item.width ===
+        "number"
         ? `Width: ${item.width}mm`
         : null,
 
-    channelWidth != null
+    Number(
+      channelWidth
+    ) > 0
       ? `Channel Width: ${channelWidth}mm`
       : null,
 
-    item.size ? `Size: ${item.size}` : null,
+    item.size
+      ? `Size: ${item.size}`
+      : null,
 
     item.design?.name
       ? `Design: ${item.design.name}`
@@ -3715,29 +4550,38 @@ function buildStandardRingDescription(item) {
     ...channelDescriptions,
 
     !hasChannelDescriptions
-      ? buildFlatMemorialDescription(item)
+      ? buildFlatMemorialDescription(
+        item
+      )
       : null,
 
     !hasChannelDescriptions
-      ? buildFlatMineralDescription(item)
+      ? buildFlatMineralDescription(
+        item
+      )
       : null,
 
     `Accent Materials: ${accentMaterialNames}`,
 
-    !hasChannelDescriptions ||
-    getGlowName(item.glow) !== "None"
-      ? `Glow Powder: ${getGlowName(item.glow)}`
+    item.glow
+      ? `Glow Powder: ${getGlowName(
+        item.glow
+      )}`
       : null,
 
     `Engraving: ${engravingDescription}`,
 
     item.engravingEnabled &&
-    item.engravingType !== "customSignature"
-      ? `Font: ${
-          item.engravingFont?.name ||
-          formatOptionName(item.engravingFont?.id) ||
-          "Not selected"
-        }`
+      item.engravingType !==
+      "customSignature"
+      ? `Font: ${item.engravingFont
+        ?.name ||
+      formatOptionName(
+        item.engravingFont
+          ?.id
+      ) ||
+      "Not selected"
+      }`
       : null,
 
     item.specialRequest
@@ -3745,367 +4589,468 @@ function buildStandardRingDescription(item) {
       : null,
   ];
 
-  return lines.filter(Boolean).join(" | ");
+  return lines
+    .filter(Boolean)
+    .join(" • ");
 }
 
-function buildChannelDescriptions(item) {
+function buildChannelDescriptions(
+  item
+) {
   const channelDefinitions =
-    item.design?.channels || [];
+    item.design?.channels ||
+    [];
 
   if (
     !channelDefinitions.length ||
     !item.channels ||
-    typeof item.channels !== "object"
+    typeof item.channels !==
+    "object"
   ) {
     return [];
   }
 
-  return channelDefinitions.map((channel, index) => {
-    const selection =
-      item.channels[channel.id] || {};
-
-    const channelName =
-      channel.name ||
-      `Channel ${index + 1}`;
-
-    const memorialValue =
-      selection.memorial?.id ||
-      selection.memorial;
-
-    const mineralValue =
-      selection.mineral?.id ||
-      selection.mineral;
-
-    const glowValue =
-      selection.glow?.id ||
-      selection.glow;
-
-    const accentValue =
-      selection.accent?.id ||
-      selection.accentMaterial?.id ||
-      selection.accent ||
-      selection.accentMaterial;
-
-    const memorialName =
-      selection.memorial?.name ||
-      formatMemorialMaterial(memorialValue) ||
-      "None";
-
-    const mineralName =
-      selection.mineral?.name ||
-      formatOptionName(mineralValue) ||
-      "None";
-
-    const glowName =
-      selection.glow?.name ||
-      formatOptionName(glowValue);
-
-    const accentName =
-      selection.accent?.name ||
-      selection.accentMaterial?.name ||
-      formatAccentMaterial(accentValue);
-
-    const parts = [
-      `Memorial: ${memorialName}`,
-      `Mineral: ${mineralName}`,
-      accentName ? `Accent: ${accentName}` : null,
-      glowName ? `Glow: ${glowName}` : null,
-    ];
-
-    return `${channelName}: ${parts
-      .filter(Boolean)
-      .join(", ")}`;
-  });
-}
-
-function buildFlatMemorialDescription(item) {
-  if (!item.memorialMaterials?.length) {
-    return "Memorial Material: None";
-  }
-
-  const names = item.memorialMaterials
-    .map((material) => {
-      const value =
-        typeof material === "string"
-          ? material
-          : material?.id;
-
-      return (
-        material?.name ||
-        formatMemorialMaterial(value)
-      );
-    })
-    .filter(Boolean)
-    .join(", ");
-
-  return `Memorial Material: ${names || "None"}`;
-}
-
-function buildFlatMineralDescription(item) {
-  if (!item.minerals?.length) {
-    return "Minerals: None";
-  }
-
-  const names = item.minerals
-    .map((mineral) => {
-      const value =
-        typeof mineral === "string"
-          ? mineral
-          : mineral?.id;
-
-      return (
-        mineral?.name ||
-        formatOptionName(value)
-      );
-    })
-    .filter(Boolean)
-    .join(", ");
-
-  return `Minerals: ${names || "None"}`;
-}
-
-function getGlowName(glow) {
-  return (
-    glow?.name ||
-    formatOptionName(glow?.id) ||
-    (typeof glow === "string"
-      ? formatOptionName(glow)
-      : "") ||
-    "None"
-  );
-}
-
-function formatMemorialMaterial(value) {
-  if (!value) return "";
-
-  const labels = {
-    ashes: "Cremation Ashes",
-    cremation: "Cremation Ashes",
-    hair: "Hair",
-    fur: "Pet Fur",
-    horseHair: "Horse Hair",
-    sand: "Sand",
-    soil: "Soil",
-    fabric: "Fabric",
-    breastMilk: "Breast Milk",
-  };
-
-  return (
-    labels[value] ||
-    formatOptionName(value)
-  );
-}
-
-function formatAccentMaterial(value) {
-  if (!value) return "";
-
-  const labels = {
-    goldFoil: "Gold Foil",
-    silverFoil: "Silver Foil",
-  };
-
-  return (
-    labels[value] ||
-    formatOptionName(value)
-  );
-}
-
-function formatKeepsakeMaterial(value) {
-  const labels = {
-    breastMilk: "Breast Milk",
-    cremation: "Cremation Ashes",
-    ashes: "Cremation Ashes",
-    sand: "Sand",
-    soil: "Soil",
-    mineralBase: "Mineral Base",
-  };
-
-  return (
-    labels[value] ||
-    formatOptionName(value) ||
-    "Not selected"
-  );
-}
-
-function formatOptionName(value) {
-  if (!value || typeof value !== "string") {
-    return "";
-  }
-
-  return value
-    .replace(/([a-z])([A-Z])/g, "$1 $2")
-    .replace(/[-_]/g, " ")
-    .replace(/\b\w/g, (letter) => letter.toUpperCase());
-}
-
-function buildMetadataList(
-  values,
-  formatter = formatOptionName
-) {
-  if (!Array.isArray(values)) {
-    return "";
-  }
-
-  return values
-    .map((value) => {
-      if (typeof value === "string") {
-        return (
-          formatter(value) ||
-          value
-        );
-      }
-
-      const rawValue =
-        value?.id ||
-        value?.value ||
-        value?.label ||
-        "";
-
-      return (
-        value?.name ||
-        formatter(rawValue) ||
-        rawValue
-      );
-    })
-    .filter(Boolean)
-    .join(", ")
-    .slice(0, 500);
-}
-
-function buildChannelMetadata(item) {
-  const channelDefinitions = item.design?.channels || [];
-
-  if (
-    !channelDefinitions.length ||
-    !item.channels ||
-    typeof item.channels !== "object"
-  ) {
-    return "";
-  }
-
-  return channelDefinitions
-    .map((channel, index) => {
-      const selection = item.channels[channel.id] || {};
+  return channelDefinitions.map(
+    (
+      channel,
+      index
+    ) => {
+      const selection =
+        item.channels[
+        channel.id
+        ] || {};
 
       const channelName =
-        channel.name || `Channel ${index + 1}`;
+        channel.name ||
+        `Channel ${index + 1
+        }`;
 
       const memorialValue =
-        selection.memorial?.id ||
+        selection.memorial
+          ?.id ||
         selection.memorial;
 
-      const memorial =
-        selection.memorial?.name ||
+      const mineralValue =
+        selection.mineral
+          ?.id ||
+        selection.mineral;
+
+      const glowValue =
+        selection.glow
+          ?.id ||
+        selection.glow;
+
+      const accentValue =
+        selection.accent
+          ?.id ||
+        selection
+          .accentMaterial
+          ?.id ||
+        selection.accent ||
+        selection
+          .accentMaterial;
+
+      const memorialName =
+        selection.memorial
+          ?.name ||
         formatMemorialMaterial(
           memorialValue
         ) ||
         "None";
 
-      const mineralValue =
-        selection.mineral?.id ||
-        selection.mineral;
-
-      const mineral =
-        selection.mineral?.name ||
+      const mineralName =
+        selection.mineral
+          ?.name ||
         formatOptionName(
           mineralValue
         ) ||
         "None";
 
-      const accentValue =
-        selection.accent?.id ||
-        selection.accentMaterial?.id ||
-        selection.accent ||
-        selection.accentMaterial;
-
-      const accent =
-        selection.accent?.name ||
-        selection.accentMaterial?.name ||
-        formatAccentMaterial(
-          accentValue
-        ) ||
-        "";
-
-      const glowValue =
-        selection.glow?.id ||
-        selection.glow;
-
-      const glow =
-        selection.glow?.name ||
+      const glowName =
+        selection.glow
+          ?.name ||
         formatOptionName(
           glowValue
-        ) ||
-        "";
+        );
 
-      return [
-        channelName,
-        `Memorial: ${memorial}`,
-        `Mineral: ${mineral}`,
-        accent ? `Accent: ${accent}` : null,
-        glow ? `Glow: ${glow}` : null,
-      ]
+      const accentName =
+        selection.accent
+          ?.name ||
+        selection
+          .accentMaterial
+          ?.name ||
+        formatAccentMaterial(
+          accentValue
+        );
+
+      const parts = [
+        `Memorial: ${memorialName}`,
+        `Mineral: ${mineralName}`,
+
+        accentName
+          ? `Accent: ${accentName}`
+          : null,
+
+        glowName
+          ? `Glow: ${glowName}`
+          : null,
+      ];
+
+      return `${channelName}: ${parts
         .filter(Boolean)
-        .join(" | ");
-    })
-    .join(" || ");
+        .join(", ")}`;
+    }
+  );
 }
 
-async function getCheckoutSiteSettings() {
-  const defaults = {
-    turnaroundMinWeeks: 2,
-    turnaroundMaxWeeks: 10,
-    usShippingOnly: true,
-    standardShippingPriceCents: 800,
-    priorityShippingPriceCents: 1500,
-    sitewideSaleEnabled: false,
-    sitewideSalePercent: 0,
-    sitewideSaleName: "",
+function buildFlatMemorialDescription(
+  item
+) {
+  if (
+    !item.memorialMaterials
+      ?.length
+  ) {
+    return "Memorial Material: None";
+  }
+
+  const names =
+    item.memorialMaterials
+      .map(
+        (material) => {
+          const value =
+            typeof material ===
+              "string"
+              ? material
+              : material?.id;
+
+          return (
+            material?.name ||
+            formatMemorialMaterial(
+              value
+            )
+          );
+        }
+      )
+      .filter(Boolean)
+      .join(", ");
+
+  return `Memorial Material: ${names ||
+    "None"
+    }`;
+}
+
+function buildFlatMineralDescription(
+  item
+) {
+  if (
+    !item.minerals
+      ?.length
+  ) {
+    return "Minerals: None";
+  }
+
+  const names =
+    item.minerals
+      .map(
+        (mineral) => {
+          const value =
+            typeof mineral ===
+              "string"
+              ? mineral
+              : mineral?.id;
+
+          return (
+            mineral?.name ||
+            formatOptionName(
+              value
+            )
+          );
+        }
+      )
+      .filter(Boolean)
+      .join(", ");
+
+  return `Minerals: ${names ||
+    "None"
+    }`;
+}
+
+function getGlowName(
+  glow
+) {
+  return (
+    glow?.name ||
+    formatOptionName(
+      glow?.id
+    ) ||
+    (
+      typeof glow ===
+        "string"
+        ? formatOptionName(
+          glow
+        )
+        : ""
+    ) ||
+    "None"
+  );
+}
+
+function formatMemorialMaterial(
+  value
+) {
+  if (!value) {
+    return "";
+  }
+
+  const labels = {
+    ashes:
+      "Cremation Ashes",
+
+    cremation:
+      "Cremation Ashes",
+
+    hair:
+      "Hair",
+
+    fur:
+      "Pet Fur",
+
+    horseHair:
+      "Horse Hair",
+
+    sand:
+      "Sand",
+
+    soil:
+      "Soil",
+
+    fabric:
+      "Fabric",
+
+    breastMilk:
+      "Breast Milk",
   };
 
-  try {
-    const settings =
-      await prisma.siteSettings.findUnique({
-        where: {
-          id: "site-settings",
-        },
-        select: {
-          turnaroundMinWeeks: true,
-          turnaroundMaxWeeks: true,
-          usShippingOnly: true,
-          standardShippingPriceCents: true,
-          priorityShippingPriceCents: true,
-          sitewideSaleEnabled: true,
-          sitewideSalePercent: true,
-          sitewideSaleName: true,
-        },
-      });
+  return (
+    labels[value] ||
+    formatOptionName(
+      value
+    )
+  );
+}
 
-    return {
-      ...defaults,
-      ...(settings || {}),
-      standardShippingPriceCents:
-        Math.max(
-          0,
-          Number(
-            settings?.standardShippingPriceCents ??
-              defaults.standardShippingPriceCents
-          ) || 0
-        ),
-      priorityShippingPriceCents:
-        Math.max(
-          0,
-          Number(
-            settings?.priorityShippingPriceCents ??
-              defaults.priorityShippingPriceCents
-          ) || 0
-        ),
-    };
-  } catch (error) {
-    console.error(
-      "Unable to load checkout settings:",
-      error
-    );
-
-    return defaults;
+function formatAccentMaterial(
+  value
+) {
+  if (!value) {
+    return "";
   }
+
+  const labels = {
+    goldFoil:
+      "Gold Foil",
+
+    silverFoil:
+      "Silver Foil",
+  };
+
+  return (
+    labels[value] ||
+    formatOptionName(
+      value
+    )
+  );
+}
+
+function formatKeepsakeMaterial(
+  value
+) {
+  const labels = {
+    breastMilk:
+      "Breast Milk",
+
+    cremation:
+      "Cremation Ashes",
+
+    ashes:
+      "Cremation Ashes",
+
+    sand:
+      "Sand",
+
+    soil:
+      "Soil",
+
+    mineralBase:
+      "Mineral Base",
+
+    specialRequest:
+      "Special Request",
+  };
+
+  return (
+    labels[value] ||
+    formatOptionName(
+      value
+    ) ||
+    "Not selected"
+  );
+}
+
+function formatOptionName(
+  value
+) {
+  if (
+    !value ||
+    typeof value !==
+    "string"
+  ) {
+    return "";
+  }
+
+  return value
+    .replace(
+      /([a-z])([A-Z])/g,
+      "$1 $2"
+    )
+    .replace(
+      /[-_]/g,
+      " "
+    )
+    .replace(
+      /\b\w/g,
+      (letter) =>
+        letter.toUpperCase()
+    );
+}
+
+function buildMetadataList(
+  values
+) {
+  if (
+    !Array.isArray(
+      values
+    )
+  ) {
+    return "";
+  }
+
+  return values
+    .map(
+      (value) => {
+        if (
+          typeof value ===
+          "string"
+        ) {
+          return value;
+        }
+
+        return (
+          value?.name ||
+          value?.id ||
+          value?.label ||
+          ""
+        );
+      }
+    )
+    .filter(Boolean)
+    .join(", ")
+    .slice(
+      0,
+      500
+    );
+}
+
+function buildChannelMetadata(
+  item
+) {
+  const channelDefinitions =
+    item.design?.channels ||
+    [];
+
+  if (
+    !channelDefinitions.length ||
+    !item.channels ||
+    typeof item.channels !==
+    "object"
+  ) {
+    return "";
+  }
+
+  return channelDefinitions
+    .map(
+      (
+        channel,
+        index
+      ) => {
+        const selection =
+          item.channels[
+          channel.id
+          ] || {};
+
+        const channelName =
+          channel.name ||
+          `Channel ${index + 1
+          }`;
+
+        const memorial =
+          selection.memorial
+            ?.name ||
+          selection.memorial
+            ?.id ||
+          selection.memorial ||
+          "None";
+
+        const mineral =
+          selection.mineral
+            ?.name ||
+          selection.mineral
+            ?.id ||
+          selection.mineral ||
+          "None";
+
+        const accent =
+          selection.accent
+            ?.name ||
+          selection.accent
+            ?.id ||
+          selection
+            .accentMaterial
+            ?.name ||
+          selection
+            .accentMaterial
+            ?.id ||
+          selection.accent ||
+          selection
+            .accentMaterial ||
+          "";
+
+        const glow =
+          selection.glow
+            ?.name ||
+          selection.glow
+            ?.id ||
+          selection.glow ||
+          "";
+
+        return [
+          channelName,
+
+          `Memorial: ${memorial}`,
+
+          `Mineral: ${mineral}`,
+
+          accent
+            ? `Accent: ${accent}`
+            : null,
+
+          glow
+            ? `Glow: ${glow}`
+            : null,
+        ]
+          .filter(Boolean)
+          .join(" | ");
+      }
+    )
+    .join(" || ");
 }

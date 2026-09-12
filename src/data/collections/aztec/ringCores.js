@@ -17,8 +17,16 @@ const aztecSizes = [
 export const aztecRingCores = [
   {
     id: "aztec-titanium",
+
     name: "Titanium Aztec Pattern",
+
+    description:
+      "Titanium comfort-fit ring featuring an engraved Aztec pattern with a 1.4mm memorial inlay channel.",
+
     material: "Titanium",
+    style: "Aztec Pattern",
+    finish: "Polished",
+    color: "Silver",
 
     widths: [
       {

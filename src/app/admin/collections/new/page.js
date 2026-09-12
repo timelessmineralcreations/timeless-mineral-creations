@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/require-admin";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -14,6 +15,7 @@ function createSlug(value) {
 
 async function createCollection(formData) {
   "use server";
+  await requireAdmin();
 
   const name = String(formData.get("name") || "").trim();
   const description = String(formData.get("description") || "").trim();
@@ -256,11 +258,14 @@ export default function NewCollectionPage() {
                     defaultValue="Ring"
                     style={inputStyle}
                   >
-                    <option value="Ring">Ring</option>
-                    <option value="Bracelet">Bracelet</option>
-                    <option value="Necklace">Necklace</option>
-                    <option value="Pendant">Pendant</option>
-                    <option value="Other">Other</option>
+                    <option value="Ring">💍 Ring</option>
+<option value="Bracelet">📿 Bracelet</option>
+<option value="Necklace">📿 Necklace</option>
+<option value="Pendant">💎 Pendant</option>
+<option value="Keychain">🔑 Keychain</option>
+<option value="Earrings">🧿 Earrings</option>
+<option value="Keepsake">🏺 Keepsake</option>
+<option value="Other">📦 Other</option>
                   </select>
                 </Field>
 

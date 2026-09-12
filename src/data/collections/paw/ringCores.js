@@ -19,8 +19,19 @@ const pawSizes = [
 export const pawRingCores = [
   {
     id: "paw-titanium",
+
     name: "Titanium Paw Print",
+
     material: "Titanium",
+
+    finish: "Polished",
+
+    supplier: "RingSupplies",
+
+    supplierCost: 30,
+
+    notes:
+      "Titanium paw print ring with a center memorial inlay channel.",
 
     widths: [
       {

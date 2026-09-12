@@ -23,8 +23,19 @@ const pawTrailSizes = [
 export const pawTrailRingCores = [
   {
     id: "paw-trail-titanium",
+
     name: "Titanium Paw Trail",
+
     material: "Titanium",
+
+    finish: "Polished",
+
+    supplier: "RingSupplies",
+
+    supplierCost: 30,
+
+    notes:
+      "Titanium paw trail ring with a memorial inlay channel.",
 
     widths: [
       {

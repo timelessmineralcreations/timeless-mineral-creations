@@ -31,8 +31,22 @@ const leafSizes = [
 export const leafRingCores = [
   {
     id: "leaf-titanium",
+
     name: "Titanium Leaf Pattern",
+
     material: "Titanium",
+
+    finish: "Polished",
+
+    supplier: "RingSupplies",
+
+    supplierCost: 30,
+
+    supplierUrl:
+      "https://ringsupplies.com/products/leaf-pattern-titanium-ring-core",
+
+    notes:
+      "Titanium leaf pattern ring core with a 1.4mm center inlay channel.",
 
     widths: [
       {

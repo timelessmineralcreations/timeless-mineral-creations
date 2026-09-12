@@ -31,8 +31,19 @@ const honeycombSizes = [
 export const honeycombRingCores = [
   {
     id: "honeycomb-titanium",
+
     name: "Titanium Honeycomb",
+
     material: "Titanium",
+
+    finish: "Polished",
+
+    supplier: "RingSupplies",
+
+    supplierCost: 30,
+
+    supplierUrl:
+      "https://ringsupplies.com/products/honeycomb-inlay-pattern-channel-titanium-ring-core",
 
     widths: [
       {

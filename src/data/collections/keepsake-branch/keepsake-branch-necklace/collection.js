@@ -4,7 +4,7 @@ import { keepsakeBranchPhotos } from "./necklacePhotos";
 
 export const keepsakeBranchCollection = {
   id: "keepsake-branch-necklace",
-  slug: "keepsake-branch-necklace",
+slug: "keepsake-branch-necklace",
 
   category: "keepsake",
 

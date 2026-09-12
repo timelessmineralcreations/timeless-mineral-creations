@@ -19,8 +19,25 @@ const greekSizes = [
 export const greekRingCores = [
   {
     id: "greek-titanium",
-    name: "Titanium Greek Mosaic",
+
+    name: "Titanium Greek Mosaic Ring",
+
+    description:
+      "Polished titanium memorial ring featuring an engraved Greek mosaic pattern with a centered inlay channel.",
+
     material: "Titanium",
+
+    finish: "Polished",
+
+    color: "Silver",
+
+    style: "Greek Mosaic",
+
+    edge: "Comfort Fit",
+
+    supplier: "RingSupplies",
+
+    supplierCost: 30,
 
     widths: [
       {

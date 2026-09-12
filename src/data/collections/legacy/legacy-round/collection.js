@@ -1,32 +1,44 @@
-import { heirloomNecklacePendantCores } from "./pendantCores";
-import { heirloomNecklacePricing } from "./pricing";
-import { heirloomNecklacePhotos } from "./photos";
+import {
+  heirloomNecklacePendantCores as legacyRoundPendantCores,
+} from "./pendantCores";
 
-export const heirloomNecklaceCollection = {
-  id: "heirloom-necklace",
-  slug: "heirloom-necklace",
-  name: "Heirloom Necklace",
+import {
+  heirloomNecklacePricing as legacyRoundPricing,
+} from "./pricing";
+
+export const legacyRoundCollection = {
+  id: "legacy-round",
+  slug: "legacy-round",
+  name: "Legacy Round Necklace",
 
   category: "necklace",
   productType: "necklace",
 
   description:
-    "An elegant sterling silver oval keepsake necklace handcrafted with your choice of cremation ashes, breast milk, sand, or soil. Personalize your pendant with hair, natural minerals, decorative accents, glow powder, or create a truly one-of-a-kind design that will be treasured for generations.",
+    "A timeless round sterling silver keepsake necklace handcrafted to hold meaningful memorial materials and create a lasting tribute to someone you love.",
 
-  heroImage: "/hero/heirloom-necklace-hero.png",
+  // Images are controlled through Admin.
+  heroImage: null,
 
   startingPrice: 140,
 
   builder: "remi",
 
-  pendantCores: heirloomNecklacePendantCores,
-  pricing: heirloomNecklacePricing,
-  pendantPhotos: heirloomNecklacePhotos,
+  pendantCores: legacyRoundPendantCores,
+  pricing: legacyRoundPricing,
+
+  // Product photos are controlled through Admin.
+  pendantPhotos: [],
 
   options: {
     keepsakeMaterials: {
       enabled: true,
-      allowed: ["ashes", "breastMilk", "sand", "soil"],
+      allowed: [
+        "ashes",
+        "breastMilk",
+        "sand",
+        "soil",
+      ],
       max: 1,
     },
 
@@ -68,7 +80,8 @@ export const heirloomNecklaceCollection = {
         },
         {
           id: "matching-chain",
-          name: 'Add Matching 16" Chain with 2" Extender',
+          name:
+            'Add Matching 16" Chain with 2" Extender',
           price: 20,
         },
       ],

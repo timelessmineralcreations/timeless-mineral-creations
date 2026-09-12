@@ -12,16 +12,26 @@ export async function POST(request) {
   try {
     const session = await auth();
 
-    if (
-      !session?.user?.email ||
-      session.user.email !==
-        "timelessmineralcreations@gmail.com"
-    ) {
-      return NextResponse.json(
-        { error: "Unauthorized." },
-        { status: 401 }
-      );
-    }
+const sessionEmail =
+  session?.user?.email
+    ?.trim()
+    .toLowerCase() || "";
+
+const adminEmail =
+  process.env.ADMIN_EMAIL
+    ?.trim()
+    .toLowerCase() || "";
+
+if (
+  !sessionEmail ||
+  !adminEmail ||
+  sessionEmail !== adminEmail
+) {
+  return NextResponse.json(
+    { error: "Unauthorized." },
+    { status: 401 }
+  );
+}
 
     const body = await request.json();
 

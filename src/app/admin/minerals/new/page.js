@@ -1,7 +1,9 @@
+import { requireAdmin } from "@/lib/require-admin";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import ImageUploader from "@/components/admin/ImageUploader";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +17,7 @@ function createSlug(value) {
 
 async function createMineral(formData) {
   "use server";
+  await requireAdmin();
 
   const name = String(formData.get("name") || "").trim();
 
@@ -212,17 +215,12 @@ export default function NewMineralPage() {
               description="Add an image path and an approximate color for the mineral swatch."
             >
               <div style={twoColumnGridStyle}>
-                <Field
-                  label="Image Path"
-                  helpText="Example: /minerals/turquoise.png"
-                >
-                  <input
-                    name="imageUrl"
-                    type="text"
-                    placeholder="/minerals/turquoise.png"
-                    style={inputStyle}
-                  />
-                </Field>
+                <ImageUploader
+  name="imageUrl"
+  label="Mineral Image"
+  folder="minerals"
+  helpText="Upload a mineral photo. It will automatically be stored in Vercel Blob."
+/>
 
                 <Field
                   label="Color"

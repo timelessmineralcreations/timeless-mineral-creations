@@ -448,21 +448,21 @@ export async function updateCollection(formData) {
   const activeMemorialMaterials =
     selectedMemorialMaterialIds.length > 0
       ? await prisma.configuratorOption.findMany({
-          where: {
-            category:
-              "memorial-material",
-            active: true,
+        where: {
+          category:
+            "memorial-material",
+          active: true,
 
-            slug: {
-              in: selectedMemorialMaterialIds,
-            },
+          slug: {
+            in: selectedMemorialMaterialIds,
           },
+        },
 
-          select: {
-            slug: true,
-            name: true,
-          },
-        })
+        select: {
+          slug: true,
+          name: true,
+        },
+      })
       : [];
 
   const activeMemorialMaterialMap =
@@ -637,66 +637,66 @@ export async function updateCollection(formData) {
 
   const existingOptions =
     existingConfiguration.options &&
-    typeof existingConfiguration.options ===
+      typeof existingConfiguration.options ===
       "object" &&
-    !Array.isArray(existingConfiguration.options)
+      !Array.isArray(existingConfiguration.options)
       ? existingConfiguration.options
       : {};
 
   const existingHair =
     existingOptions.hair &&
-    typeof existingOptions.hair === "object" &&
-    !Array.isArray(existingOptions.hair)
+      typeof existingOptions.hair === "object" &&
+      !Array.isArray(existingOptions.hair)
       ? existingOptions.hair
       : {};
 
   const existingBezelSize =
     existingOptions.bezelSize &&
-    typeof existingOptions.bezelSize ===
+      typeof existingOptions.bezelSize ===
       "object" &&
-    !Array.isArray(
-      existingOptions.bezelSize
-    )
+      !Array.isArray(
+        existingOptions.bezelSize
+      )
       ? existingOptions.bezelSize
       : {};
 
   const existingChain =
     existingOptions.chain &&
-    typeof existingOptions.chain ===
+      typeof existingOptions.chain ===
       "object" &&
-    !Array.isArray(
-      existingOptions.chain
-    )
+      !Array.isArray(
+        existingOptions.chain
+      )
       ? existingOptions.chain
       : {};
 
   const existingEngraving =
     existingOptions.engraving &&
-    typeof existingOptions.engraving ===
+      typeof existingOptions.engraving ===
       "object" &&
-    !Array.isArray(
-      existingOptions.engraving
-    )
+      !Array.isArray(
+        existingOptions.engraving
+      )
       ? existingOptions.engraving
       : {};
 
   const existingBirthstones =
     existingOptions.birthstones &&
-    typeof existingOptions.birthstones ===
+      typeof existingOptions.birthstones ===
       "object" &&
-    !Array.isArray(
-      existingOptions.birthstones
-    )
+      !Array.isArray(
+        existingOptions.birthstones
+      )
       ? existingOptions.birthstones
       : {};
 
   const existingDecorativeAccents =
     existingOptions.decorativeAccents &&
-    typeof existingOptions.decorativeAccents ===
+      typeof existingOptions.decorativeAccents ===
       "object" &&
-    !Array.isArray(
-      existingOptions.decorativeAccents
-    )
+      !Array.isArray(
+        existingOptions.decorativeAccents
+      )
       ? existingOptions.decorativeAccents
       : {};
 

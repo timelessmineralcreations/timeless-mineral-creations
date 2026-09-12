@@ -28,7 +28,14 @@ export const ribbonRingCores = [
 
     material: "Titanium",
 
+    finish: "Polished",
+
+    supplier: "RingSupplies",
+
     supplierCost: 35,
+
+    notes:
+      "Titanium ribbon-style ring with a center memorial inlay channel.",
 
     widths: [
       {

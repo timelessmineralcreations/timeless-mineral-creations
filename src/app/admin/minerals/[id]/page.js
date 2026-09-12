@@ -1,7 +1,9 @@
+import { requireAdmin } from "@/lib/require-admin";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import ImageUploader from "@/components/admin/ImageUploader";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +17,7 @@ function createSlug(value) {
 
 async function updateMineral(formData) {
   "use server";
+  await requireAdmin();
 
   const id = String(formData.get("id") || "").trim();
   const name = String(formData.get("name") || "").trim();
@@ -35,8 +38,18 @@ async function updateMineral(formData) {
     formData.get("colorHex") || ""
   ).trim();
 
-  const active = formData.get("active") === "on";
-  const featured = formData.get("featured") === "on";
+  const category = String(
+  formData.get("category") || ""
+).trim();
+
+const priceAdjustmentCents = Math.round(
+  Number(formData.get("priceAdjustment") || 0) * 100
+);
+
+const active = formData.get("active") === "on";
+const featured = formData.get("featured") === "on";
+const premium = formData.get("premium") === "on";
+const popular = formData.get("popular") === "on";
 
   const sortOrder = Number(
     formData.get("sortOrder") || 0
@@ -81,17 +94,27 @@ async function updateMineral(formData) {
       id,
     },
     data: {
-      name,
-      slug,
-      description: description || null,
-      imageUrl: imageUrl || null,
-      colorHex: colorHex || null,
-      active,
-      featured,
-      sortOrder: Number.isFinite(sortOrder)
-        ? sortOrder
-        : 0,
-    },
+  name,
+  slug,
+
+  description: description || null,
+
+  category: category || null,
+
+  imageUrl: imageUrl || null,
+  colorHex: colorHex || null,
+
+  priceAdjustmentCents,
+
+  active,
+  featured,
+  premium,
+  popular,
+
+  sortOrder: Number.isFinite(sortOrder)
+    ? sortOrder
+    : 0,
+}
   });
 
   revalidatePath("/admin/minerals");
@@ -102,6 +125,7 @@ async function updateMineral(formData) {
 
 async function deleteMineral(formData) {
   "use server";
+  await requireAdmin();
 
   const id = String(formData.get("id") || "").trim();
 
@@ -258,118 +282,136 @@ export default async function EditMineralPage({ params }) {
             </FormSection>
 
             <FormSection
-              title="Appearance"
-              description="Update the image path and approximate color used for the mineral swatch."
-            >
-              <div style={twoColumnGridStyle}>
-                <Field
-                  label="Image Path"
-                  helpText="Example: /minerals/turquoise.png"
-                >
-                  <input
-                    name="imageUrl"
-                    type="text"
-                    defaultValue={mineral.imageUrl || ""}
-                    style={inputStyle}
-                  />
-                </Field>
+  title="Appearance"
+  description="Upload or replace the mineral image and choose an approximate color for the admin swatch."
+>
+  <div style={twoColumnGridStyle}>
+    <ImageUploader
+      name="imageUrl"
+      label="Mineral Image"
+      folder="minerals"
+      defaultValue={mineral.imageUrl || ""}
+      helpText="Upload a JPG, PNG, or WebP mineral photo."
+    />
 
-                <Field
-                  label="Color"
-                  helpText="Choose an approximate color for the admin swatch."
-                >
-                  <input
-                    name="colorHex"
-                    type="color"
-                    defaultValue={
-                      mineral.colorHex || "#4f9f9b"
-                    }
-                    style={{
-                      ...inputStyle,
-                      padding: "6px",
-                      cursor: "pointer",
-                    }}
-                  />
-                </Field>
-              </div>
+    <Field
+      label="Color"
+      helpText="Choose an approximate color for the admin swatch."
+    >
+      <input
+        name="colorHex"
+        type="color"
+        defaultValue={mineral.colorHex || "#4f9f9b"}
+        style={{
+          ...inputStyle,
+          padding: "6px",
+          cursor: "pointer",
+        }}
+      />
+    </Field>
+  </div>
 
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "14px",
-                  padding: "14px",
-                  border:
-                    "1px solid rgba(255, 255, 255, 0.1)",
-                  borderRadius: "12px",
-                  background:
-                    "rgba(255, 255, 255, 0.025)",
-                }}
-              >
-                <div
-                  style={{
-                    width: "54px",
-                    height: "54px",
-                    borderRadius: "50%",
-                    background:
-                      mineral.colorHex || "#4f9f9b",
-                    border:
-                      "1px solid rgba(255, 255, 255, 0.2)",
-                    flexShrink: 0,
-                  }}
-                />
+  <div
+    style={{
+      display: "flex",
+      alignItems: "center",
+      gap: "14px",
+      padding: "14px",
+      border: "1px solid rgba(255, 255, 255, 0.1)",
+      borderRadius: "12px",
+      background: "rgba(255, 255, 255, 0.025)",
+    }}
+  >
+    <div
+      style={{
+        width: "54px",
+        height: "54px",
+        borderRadius: "50%",
+        background: mineral.colorHex || "#4f9f9b",
+        border: "1px solid rgba(255, 255, 255, 0.2)",
+        flexShrink: 0,
+      }}
+    />
 
-                <div>
-                  <strong
-                    style={{
-                      display: "block",
-                      marginBottom: "4px",
-                    }}
-                  >
-                    Current Color
-                  </strong>
+    <div>
+      <strong
+        style={{
+          display: "block",
+          marginBottom: "4px",
+        }}
+      >
+        Currently Saved Color
+      </strong>
 
-                  <span
-                    style={{
-                      color: "#98a49f",
-                      fontSize: "13px",
-                    }}
-                  >
-                    {mineral.colorHex || "No color saved"}
-                  </span>
-                </div>
-              </div>
+      <span
+        style={{
+          color: "#98a49f",
+          fontSize: "13px",
+        }}
+      >
+        {mineral.colorHex || "No color saved"}
+      </span>
+    </div>
+  </div>
+</FormSection>
 
-              {mineral.imageUrl ? (
-                <div
-                  style={{
-                    width: "100%",
-                    maxWidth: "420px",
-                    aspectRatio: "4 / 3",
-                    overflow: "hidden",
-                    borderRadius: "14px",
-                    border:
-                      "1px solid rgba(255, 255, 255, 0.12)",
-                    background: "rgba(0, 0, 0, 0.2)",
-                  }}
-                >
-                  <img
-                    src={mineral.imageUrl}
-                    alt={mineral.name}
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                    }}
-                  />
-                </div>
-              ) : null}
-            </FormSection>
+<FormSection
+  title="Pricing & Classification"
+  description="Control how this mineral is grouped and priced throughout the website."
+>
+  <div style={twoColumnGridStyle}>
+    <Field label="Category">
+      <input
+        name="category"
+        type="text"
+        defaultValue={mineral.category || ""}
+        placeholder="Gemstone"
+        style={inputStyle}
+      />
+    </Field>
 
-            <FormSection
-              title="Organization and Status"
-              description="Inactive minerals remain saved but will be hidden from new selections."
-            >
+    <Field
+      label="Price Adjustment"
+      helpText="Dollar amount added when this mineral is selected."
+    >
+      <input
+        name="priceAdjustment"
+        type="number"
+        step="0.01"
+        defaultValue={
+          (mineral.priceAdjustmentCents || 0) / 100
+        }
+        style={inputStyle}
+      />
+    </Field>
+  </div>
+
+  <div
+    style={{
+      display: "grid",
+      gap: "12px",
+    }}
+  >
+    <CheckboxField
+      name="popular"
+      label="Popular"
+      description="Show this mineral as a popular choice."
+      defaultChecked={mineral.popular}
+    />
+
+    <CheckboxField
+      name="premium"
+      label="Premium"
+      description="Display as a premium mineral."
+      defaultChecked={mineral.premium}
+    />
+  </div>
+</FormSection>
+
+<FormSection
+  title="Organization and Status"
+  description="Inactive minerals remain saved but will be hidden from new selections."
+>
               <Field
                 label="Sort Order"
                 helpText="Lower numbers appear first."

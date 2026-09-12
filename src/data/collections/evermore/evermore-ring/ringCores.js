@@ -18,11 +18,18 @@ export const evermoreRingCores = [
   {
     id: "keepsake-white-gold-plated-sterling-silver",
 
-    name: "Sterling Silver",
+    name: "Evermore Ring — White Gold Plated",
+
+    description:
+      "Elegant 925 sterling silver keepsake ring with a white gold plated finish, marquise keepsake settings, and coordinating CZ birthstones.",
 
     material: "Sterling Silver",
 
     finish: "White Gold Plated",
+
+    color: "Silver",
+
+    style: "Marquise Keepsake Ring",
 
     supplier: "LancelotDIY",
 
@@ -45,7 +52,7 @@ export const evermoreRingCores = [
     ],
 
     notes:
-      "2x4mm marquise keepsake bezels with 2mm CZ birthstones. No engraving.",
+      "Eight 2×4mm marquise keepsake bezels with 2mm CZ birthstones. No engraving available.",
 
     ringDetails: {
       settingQuantity: 8,
@@ -58,11 +65,18 @@ export const evermoreRingCores = [
   {
     id: "keepsake-rose-gold-plated-sterling-silver",
 
-    name: "Rose Gold Plated Sterling Silver",
+    name: "Evermore Ring — Rose Gold Plated",
+
+    description:
+      "Elegant 925 sterling silver keepsake ring with a rose gold plated finish, marquise keepsake settings, and coordinating CZ birthstones.",
 
     material: "Sterling Silver",
 
     finish: "Rose Gold Plated",
+
+    color: "Rose Gold",
+
+    style: "Marquise Keepsake Ring",
 
     supplier: "LancelotDIY",
 
@@ -85,7 +99,7 @@ export const evermoreRingCores = [
     ],
 
     notes:
-      "2x4mm marquise keepsake bezels with 2mm CZ birthstones. No engraving.",
+      "Eight 2×4mm marquise keepsake bezels with 2mm CZ birthstones. No engraving available.",
 
     ringDetails: {
       settingQuantity: 8,
@@ -98,11 +112,18 @@ export const evermoreRingCores = [
   {
     id: "keepsake-yellow-gold-plated-sterling-silver",
 
-    name: "Yellow Gold Plated Sterling Silver",
+    name: "Evermore Ring — Yellow Gold Plated",
+
+    description:
+      "Elegant 925 sterling silver keepsake ring with a yellow gold plated finish, marquise keepsake settings, and coordinating CZ birthstones.",
 
     material: "Sterling Silver",
 
     finish: "Yellow Gold Plated",
+
+    color: "Yellow Gold",
+
+    style: "Marquise Keepsake Ring",
 
     supplier: "LancelotDIY",
 
@@ -125,7 +146,7 @@ export const evermoreRingCores = [
     ],
 
     notes:
-      "2x4mm marquise keepsake bezels with 2mm CZ birthstones. No engraving.",
+      "Eight 2×4mm marquise keepsake bezels with 2mm CZ birthstones. No engraving available.",
 
     ringDetails: {
       settingQuantity: 8,

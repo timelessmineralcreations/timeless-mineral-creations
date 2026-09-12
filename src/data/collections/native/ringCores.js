@@ -19,8 +19,22 @@ const nativeSizes = [
 export const nativeRingCores = [
   {
     id: "native-titanium",
+
     name: "Titanium Native Blanket",
+
     material: "Titanium",
+
+    finish: "Polished",
+
+    supplier: "RingSupplies",
+
+    supplierCost: 30,
+
+    supplierUrl:
+      "https://ringsupplies.com/products/native-blanket-pattern-titanium-ring-core",
+
+    notes:
+      "Titanium Native Blanket pattern ring core with a 1.4mm center inlay channel.",
 
     widths: [
       {

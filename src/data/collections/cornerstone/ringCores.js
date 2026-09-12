@@ -14,11 +14,18 @@ export const cornerstoneRingCores = [
   {
     id: "cornerstone-titanium-bentwood",
 
-    name: "Titanium",
+    name: "Titanium Cornerstone Ring",
+
+    description:
+      "Polished titanium memorial ring featuring a distinctive brick wall (cornerstone) pattern with a comfort-fit interior.",
 
     material: "Titanium",
 
     finish: "Polished",
+
+    color: "Silver",
+
+    style: "Cornerstone",
 
     supplier: "Bentwood Ring Supplies",
 

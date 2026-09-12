@@ -24,3 +24,17 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+/* Admin dropdown menus */
+.admin-page {
+  color-scheme: dark;
+}
+
+.admin-page select {
+  color-scheme: dark;
+}
+
+.admin-page select option,
+.admin-page select optgroup {
+  background-color: #ffffff !important;
+  color: #111111 !important;
+}

@@ -1,17 +1,31 @@
 export const mountainRingCores = [
   {
     id: "mountain-titanium-8mm",
+
     name: "Mountain Range Titanium",
+
     material: "Titanium",
+
+    finish: "Brushed",
+
     style: "Mountain Range",
+
     supplier: "RingSupplies",
+
+    supplierCost: 30,
+
+    supplierUrl:
+      "https://ringsupplies.com/products/mountain-range-titanium-ring-core",
+
     notes:
       "Brushed titanium mountain-profile ring with a polished comfort-fit interior.",
 
     widths: [
       {
         width: 8,
+
         channelWidth: "4mm",
+
         sizes: [
           4,
           4.5,

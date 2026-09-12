@@ -20,12 +20,17 @@ export const quadRingCores = [
 
     finish: "Brushed",
 
+    style: "Quad Channel",
+
     supplier: "RingSupplies",
 
     supplierCost: 30,
 
     supplierUrl:
       "https://ringsupplies.com/collections/titanium-ring-cores/products/long-rectangle-inlay-channels-titanium-ring-core",
+
+    notes:
+      "Titanium ring featuring four independent rectangular inlay channels.",
 
     widths: [
       {

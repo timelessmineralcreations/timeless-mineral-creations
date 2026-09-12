@@ -14,14 +14,17 @@ export const celticRingCores = [
   {
     id: "celtic-titanium-ringsupplies",
 
-    name: "Titanium",
+    name: "Titanium Celtic Knot",
+
+    description:
+      "Polished titanium comfort-fit ring featuring an engraved Celtic knot pattern with a 4mm memorial inlay channel.",
 
     material: "Titanium",
-
     finish: "Polished",
+    color: "Silver",
+    style: "Celtic Knot",
 
     supplier: "RingSupplies",
-
     supplierCost: 30,
 
     supplierUrl:

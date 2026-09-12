@@ -1,11 +1,12 @@
-// src/data/collections/clam/pricing.js
-
 export const clamPricing = {
   profit: 100,
 
+  metal: {
+    Titanium: 30,
+  },
+
   width: {
-    4: 0,
-    7: 0,
+    8: 0,
   },
 
   memorialMaterials: {

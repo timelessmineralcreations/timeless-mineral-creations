@@ -27,8 +27,19 @@ const dragonSizes = [
 export const dragonRingCores = [
   {
     id: "dragon-titanium",
-    name: "Titanium Dragon Scale",
+
+    name: "Titanium Dragon Scale Ring",
+
+    description:
+      "Polished titanium memorial ring featuring an engraved dragon scale pattern with a centered inlay channel.",
+
     material: "Titanium",
+
+    finish: "Polished",
+
+    color: "Silver",
+
+    style: "Dragon Scale",
 
     widths: [
       {

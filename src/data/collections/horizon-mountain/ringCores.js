@@ -27,6 +27,9 @@ export const horizonMountainRingCores = [
     supplierUrl:
       "https://bentwoodringsupplies.com/products/titanium-mountainrange-ring-blank",
 
+    notes:
+      "Titanium ring blank with separate mountain skyline and landscape inlay channels.",
+
     widths: [
       {
         width: 8,

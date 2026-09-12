@@ -79,8 +79,16 @@ const sizes5To15 = [
 export const tripleRingCores = [
   {
     id: "triple-tungsten",
+
     name: "Tungsten Triple Channel",
+
     material: "Tungsten",
+
+    finish: "Polished",
+
+    style: "Triple Channel",
+
+    notes: "Three parallel inlay channels.",
 
     widths: [
       {
@@ -92,8 +100,16 @@ export const tripleRingCores = [
 
   {
     id: "triple-black-ceramic",
+
     name: "Black Ceramic Triple Channel",
+
     material: "Black Ceramic",
+
+    finish: "Polished",
+
+    style: "Triple Channel",
+
+    notes: "Three parallel inlay channels.",
 
     widths: [
       {
@@ -105,8 +121,16 @@ export const tripleRingCores = [
 
   {
     id: "triple-titanium",
+
     name: "Titanium Triple Channel",
+
     material: "Titanium",
+
+    finish: "Polished",
+
+    style: "Triple Channel",
+
+    notes: "Three parallel inlay channels.",
 
     widths: [
       {
@@ -118,8 +142,16 @@ export const tripleRingCores = [
 
   {
     id: "triple-white-ceramic",
+
     name: "White Ceramic Triple Channel",
+
     material: "White Ceramic",
+
+    finish: "Polished",
+
+    style: "Triple Channel",
+
+    notes: "Three parallel inlay channels.",
 
     widths: [
       {
@@ -131,8 +163,16 @@ export const tripleRingCores = [
 
   {
     id: "triple-stainless-steel",
+
     name: "Stainless Steel Triple Channel",
+
     material: "Stainless Steel",
+
+    finish: "Polished",
+
+    style: "Triple Channel",
+
+    notes: "Three parallel inlay channels.",
 
     widths: [
       {

@@ -1,23 +1,39 @@
 export const tornadoRingCores = [
   {
     id: "titanium-tornado",
-    name: "Tornado",
+
+    name: "Titanium Tornado Twist Ring",
+
     material: "Titanium",
-    edge: "Tornado Twist",
+
+    finish: "Brushed",
+
     color: "Natural Titanium",
 
-    description:
-      "Tornado Twist inlay pattern titanium ring core with a brushed top finish and polished comfort-fit interior.",
+    style: "Tornado Twist",
 
-    finish: "Brushed top finish with polished comfort-fit interior",
+    edge: "Tornado Twist",
+
+    comfortFit: true,
+
+    description:
+      "Titanium memorial ring featuring a two-inlay Tornado Twist pattern, brushed top finish, and polished comfort-fit interior.",
+
+    notes:
+      "Two-part twisted inlay pattern with a 1.4mm channel depth.",
 
     channelPattern: "2-inlay twist pattern",
+
     channelDepth: "1.4mm",
+
+    supplierCost: 40,
 
     widths: [
       {
         width: 6,
+
         name: "6mm",
+
         description:
           "6mm total ring width with a two-inlay Tornado Twist channel.",
 
@@ -45,8 +61,8 @@ export const tornadoRingCores = [
       },
     ],
 
-    baseCost: 40,
-    available: true,
+    active: true,
+
     featured: true,
   },
 ];

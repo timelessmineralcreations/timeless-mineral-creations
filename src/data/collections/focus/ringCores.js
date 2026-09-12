@@ -14,11 +14,20 @@ export const focusRingCores = [
   {
     id: "focus-titanium-bentwood",
 
-    name: "Titanium",
+    name: "Titanium Focus Ring",
+
+    description:
+      "Polished titanium memorial ring featuring a center keepsake setting and a surrounding inlay channel for custom memorial designs.",
 
     material: "Titanium",
 
     finish: "Polished",
+
+    color: "Silver",
+
+    style: "Focus",
+
+    edge: "Comfort Fit",
 
     supplier: "Bentwood Ring Supplies",
 

@@ -2,12 +2,22 @@ export const heirloomRingCores = [
   {
     id: "heirloom-ring",
 
-    name: "Heirloom Ring",
+    name: "Heirloom Keepsake Ring",
 
     description:
-      "Elegant sterling silver bezel-set keepsake ring available in white gold, yellow gold, and rose gold plated finishes.",
+      "Elegant 925 sterling silver bezel-set keepsake ring available in white gold, yellow gold, and rose gold plated finishes.",
 
     featured: true,
+
+    material: "Sterling Silver",
+
+    finish: "White Gold Plated",
+
+    color: "Silver",
+
+    style: "Bezel Ring",
+
+    supplier: "LancelotDIY",
 
     widths: [],
 

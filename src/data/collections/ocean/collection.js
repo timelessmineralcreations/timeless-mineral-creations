@@ -1,4 +1,4 @@
-import { oceanRingCores } from "./ringCores";
+import { mountainRingCores } from "../mountain/ringCores";
 import { mountainPricing } from "../mountain/pricing";
 import { oceanRingPhotos } from "./ringPhotos";
 
@@ -17,7 +17,7 @@ export const oceanCollection = {
 
   builder: "standard",
 
-  ringCores: oceanRingCores,
+  ringCores: mountainRingCores,
   pricing: mountainPricing,
   ringPhotos: oceanRingPhotos,
 

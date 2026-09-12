@@ -15,7 +15,11 @@ export default function calculateRingPrice({
   specialRequest = false,
   selectedMaterial,
 }) {
-  const pricing = collection?.pricing || {};
+  const pricing =
+  collection?.useDatabasePricing &&
+  collection?.databasePricing
+    ? collection.databasePricing
+    : collection?.pricing || {};
 
   let totalPrice = Number(pricing.profit || 100);
 

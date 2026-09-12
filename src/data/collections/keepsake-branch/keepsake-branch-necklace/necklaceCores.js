@@ -1,6 +1,7 @@
 export const keepsakeBranchNecklaceCores = [
   {
     id: "keepsake-branch-necklace",
+
     name: "Keepsake Branch Necklace",
 
     productType: "necklace",
@@ -9,12 +10,21 @@ export const keepsakeBranchNecklaceCores = [
 
     supplier: "Lancelot DIY",
 
+    supplierModel: "1431209",
+
+    supplierCost: 29.5,
+
+    estimatedShippingCost: 10,
+
+    landedCost: 39.5,
+
     supplierUrl:
       "https://www.lancelotdiy.com/keepsake-mothers-milk-resin-marquise-bezel-pendant-settingstree-branch-leaf-necklace2x35mm-marquise-bezelsolid-925-sterling-silver-necklace-chain-162-1431209-p-9897.html",
 
-    supplierItemNumber: "1431209",
-
     chainLength: '16" with 2" extender',
+
+    notes:
+      "Three marquise keepsake bezels on a tree branch pendant. No engraving available.",
 
     pendantDetails: {
       design: "Tree Branch and Leaf",
@@ -57,11 +67,6 @@ export const keepsakeBranchNecklaceCores = [
         materialDescription:
           "Solid 925 Sterling Silver with Rose Gold Plating",
 
-        /*
-         * We do not have rose-gold photos yet.
-         * These silver photos are temporary fallbacks so the page
-         * never displays a broken image.
-         */
         images: [
           "/necklaces/keepsake-branch/keepsake-branch-silver-breastmilk.png",
           "/necklaces/keepsake-branch/keepsake-branch-silver-breastmilk2.png",

@@ -1,7 +1,9 @@
+import { requireAdmin } from "@/lib/require-admin";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import ImageUploader from "@/components/admin/ImageUploader";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +24,7 @@ function cleanList(value) {
 
 async function createRingCore(formData) {
   "use server";
+  await requireAdmin();
 
   const name = String(formData.get("name") || "").trim();
   const submittedSlug = String(formData.get("slug") || "").trim();
@@ -387,18 +390,16 @@ export default function NewRingCorePage() {
             </FormSection>
 
             <FormSection
-              title="Product Image"
-              description="For now, use an image path from your public folder. Direct uploads will be added later."
-            >
-              <Field label="Image Path">
-                <input
-                  name="imageUrl"
-                  type="text"
-                  placeholder="/rings/cores/titanium-flat-8mm.png"
-                  style={inputStyle}
-                />
-              </Field>
-            </FormSection>
+  title="Product Image"
+  description="Upload a ring core photo. It will automatically be stored in Vercel Blob."
+>
+  <ImageUploader
+    name="imageUrl"
+    label="Ring Core Image"
+    folder="ring-cores"
+    helpText="Upload a photo of the ring blank."
+  />
+</FormSection>
 
             <FormSection
               title="Internal Notes"

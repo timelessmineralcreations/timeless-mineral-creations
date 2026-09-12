@@ -27,8 +27,19 @@ const puzzleSizes = [
 export const puzzleRingCores = [
   {
     id: "puzzle-titanium",
+
     name: "Titanium Puzzle Piece",
+
     material: "Titanium",
+
+    finish: "Polished",
+
+    supplier: "RingSupplies",
+
+    supplierCost: 30,
+
+    notes:
+      "Titanium puzzle piece ring with a memorial inlay channel.",
 
     widths: [
       {

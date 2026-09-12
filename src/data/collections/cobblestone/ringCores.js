@@ -14,11 +14,15 @@ export const cobblestoneRingCores = [
   {
     id: "cobblestone-titanium-ringsupplies",
 
-    name: "Titanium",
+    name: "Titanium Cobblestone Pattern",
+
+    description:
+      "Polished titanium comfort-fit ring featuring an engraved cobblestone pattern with a 4mm memorial inlay channel.",
 
     material: "Titanium",
-
     finish: "Polished",
+    color: "Silver",
+    style: "Cobblestone Pattern",
 
     supplier: "RingSupplies",
 

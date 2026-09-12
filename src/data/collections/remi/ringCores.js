@@ -1,12 +1,21 @@
 export const remiRingCores = [
   {
     id: "remi-ring",
+
     name: "Remi Ring",
+
+    productType: "ring",
+
+    material: "Sterling Silver",
+
+    color: "Silver",
+
+    style: "Oval Bezel",
+
     description:
       "Elegant oval keepsake ring available in sterling silver and gold plated finishes.",
-    featured: true,
 
-    widths: [],
+    featured: true,
 
     finishes: [
       "Sterling Silver",
@@ -25,5 +34,15 @@ export const remiRingCores = [
       "10x8",
       "11x9",
     ],
+
+    supplier: "LancelotDIY",
+
+    supplierModel: "Remi Ring",
+
+    supplierCost: 28.21,
+
+    estimatedShippingCost: 10,
+
+    landedCost: 38.21,
   },
 ];

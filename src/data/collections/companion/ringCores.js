@@ -14,11 +14,18 @@ export const companionRingCores = [
   {
     id: "companion-titanium-bentwood",
 
-    name: "Titanium",
+    name: "Titanium Companion Ring",
+
+    description:
+      "Polished titanium memorial ring featuring a decorative paw print focus channel with a secondary band inlay for keepsake materials.",
 
     material: "Titanium",
 
     finish: "Polished",
+
+    color: "Silver",
+
+    style: "Companion",
 
     supplier: "Bentwood Ring Supplies",
 

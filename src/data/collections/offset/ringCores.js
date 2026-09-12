@@ -38,6 +38,9 @@ export const offsetRingCores = [
     supplierUrl:
       "https://ringsupplies.com/products/offset-hammered-tungsten-inlay-ring-core",
 
+    notes:
+      "Hammered tungsten offset ring with a single offset inlay channel.",
+
     widths: [
       {
         width: 4,
@@ -73,6 +76,9 @@ export const offsetRingCores = [
     supplierUrl:
       "https://ringsupplies.com/products/tungsten-offset-inlay-single-1-5mm-channel-ring-core",
 
+    notes:
+      "Smooth tungsten offset ring with a wide single offset inlay channel.",
+
     widths: [
       {
         width: 6,
@@ -103,6 +109,9 @@ export const offsetRingCores = [
     supplierUrl:
       "https://patrickadairsupplies.com/products/tungsten-ring-blank-offset-channel",
 
+    notes:
+      "Smooth tungsten offset ring with a narrow offset inlay channel.",
+
     widths: [
       {
         width: 6,
@@ -118,7 +127,8 @@ export const offsetRingCores = [
       },
     ],
   },
-    // =========================================================
+
+  // =========================================================
   // TITANIUM
   // =========================================================
 
@@ -137,6 +147,9 @@ export const offsetRingCores = [
 
     supplierUrl:
       "https://ringsupplies.com/products/offset-channel-titanium-ring-core",
+
+    notes:
+      "Smooth titanium offset ring with a single offset inlay channel.",
 
     widths: [
       {
@@ -162,6 +175,9 @@ export const offsetRingCores = [
 
     supplierUrl:
       "https://patrickadairsupplies.com/products/titanium-offset-channel-ring-blank",
+
+    notes:
+      "Smooth titanium offset ring with a narrow offset inlay channel.",
 
     widths: [
       {
@@ -199,6 +215,9 @@ export const offsetRingCores = [
     supplierUrl:
       "https://ringsupplies.com/products/offset-hammered-black-ceramic-inlay-ring-core",
 
+    notes:
+      "Hammered black ceramic offset ring with a single offset inlay channel.",
+
     widths: [
       {
         width: 8,
@@ -223,6 +242,9 @@ export const offsetRingCores = [
 
     supplierUrl:
       "https://ringsupplies.com/products/black-ceramic-offset-inlay-groove-ring-core",
+
+    notes:
+      "Smooth black ceramic offset ring with a wide single offset inlay channel.",
 
     widths: [
       {
@@ -249,6 +271,9 @@ export const offsetRingCores = [
     supplierUrl:
       "https://patrickadairsupplies.com/products/black-ceramic-ring-blank-offset-channel",
 
+    notes:
+      "Smooth black ceramic offset ring with a narrow offset inlay channel.",
+
     widths: [
       {
         width: 6,
@@ -265,7 +290,7 @@ export const offsetRingCores = [
     ],
   },
 
-    // =========================================================
+  // =========================================================
   // WHITE CERAMIC
   // =========================================================
 
@@ -284,6 +309,9 @@ export const offsetRingCores = [
 
     supplierUrl:
       "https://patrickadairsupplies.com/products/white-ceramic-ring-blank-offset-channel",
+
+    notes:
+      "Smooth white ceramic offset ring with a narrow offset inlay channel.",
 
     widths: [
       {

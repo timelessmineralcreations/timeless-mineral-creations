@@ -26,14 +26,20 @@ const clamSizes = [
 export const clamRingCores = [
   {
     id: "clam-titanium",
-    material: "Titanium",
-    edge: "Clam Shell Edge",
-    finish: "Polished",
-    comfortFit: true,
-    baseCost: 30,
+
+    name: "Titanium Clam Shell Edge",
 
     description:
-      "Polished titanium comfort-fit ring core with a distinctive clam shell inlay channel.",
+      "Polished titanium comfort-fit ring featuring a decorative clam shell edge with a memorial inlay channel.",
+
+    material: "Titanium",
+    finish: "Polished",
+    color: "Silver",
+    style: "Clam Shell Edge",
+    edge: "Clam Shell Edge",
+    comfortFit: true,
+
+    baseCost: 30,
 
     image: "",
 

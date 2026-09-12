@@ -21,104 +21,258 @@ export default function SummaryCard({
   selectedGlow,
   selectedKeepsakeMaterial,
   selectedBirthstone,
-selectedEngravingFont,
-engravingEnabled,
-engravingType,
-engravingText,
-specialRequest,
-totalPrice,
+  selectedEngravingFont,
+  engravingEnabled,
+  engravingType,
+  engravingText,
+  specialRequest,
+  totalPrice,
+  regularPrice = totalPrice,
+  sitewideSaleEnabled = false,
+  sitewideSalePercent = 0,
+  sitewideSaleName = "",
 }) {
   const [copied, setCopied] = useState(false);
+  const [addedToCart, setAddedToCart] = useState(false);
+
   const { addItem } = useCart();
 
-  const memorialNames = selectedMaterials.map(
-    (id) => memorialMaterials.find((material) => material.id === id)?.name || id
-  );
+  const numericTotalPrice =
+    Number(totalPrice) || 0;
 
-  const mineralNames = selectedMinerals.map(
-    (mineral) => mineral?.name || mineral?.id
-  );
+  const numericRegularPrice =
+    Number(regularPrice) ||
+    numericTotalPrice;
 
-  const accentNames = selectedAccentMaterials.map(
-    (id) => accentMaterials.find((accent) => accent.id === id)?.name || id
-  );
+  const numericSalePercent =
+    Math.min(
+      99,
+      Math.max(
+        0,
+        Math.round(
+          Number(
+            sitewideSalePercent
+          ) || 0
+        )
+      )
+    );
 
-  const styleName = `${selectedCore?.color ? `${selectedCore.color} ` : ""}${
-    selectedCore?.edge || ""
-  }`.trim();
+  const saleActive =
+    Boolean(
+      sitewideSaleEnabled
+    ) &&
+    numericSalePercent > 0 &&
+    numericRegularPrice >
+      numericTotalPrice;
 
-  const channelDefinitions = selectedInlayStyle?.channels || [];
+  const saleLabel =
+    String(
+      sitewideSaleName || ""
+    ).trim() ||
+    "Site-Wide Sale";
 
-  const channelSummaries = channelDefinitions.map((channel, index) => {
-  const selection = selectedChannels[channel.id] || {};
+  const memorialNames =
+    selectedMaterials.map(
+      (id) =>
+        memorialMaterials.find(
+          (material) =>
+            material.id === id
+        )?.name || id
+    );
 
-  const memorialName = selection.memorial
-    ? memorialMaterials.find(
-        (material) => material.id === selection.memorial
-      )?.name || selection.memorial
-    : null;
+  const mineralNames =
+    selectedMinerals.map(
+      (mineral) =>
+        mineral?.name ||
+        mineral?.id
+    );
 
-  const mineralName =
-    selection.mineral?.name || selection.mineral?.id || null;
+  const accentNames =
+    selectedAccentMaterials.map(
+      (id) =>
+        accentMaterials.find(
+          (accent) =>
+            accent.id === id
+        )?.name || id
+    );
 
-  const glowName =
-    selection.glow?.name ||
-    selection.glow?.id ||
-    (typeof selection.glow === "string" ? selection.glow : null);
+  const styleName =
+    `${
+      selectedCore?.color
+        ? `${selectedCore.color} `
+        : ""
+    }${
+      selectedCore?.edge || ""
+    }`.trim();
 
-  let value = "Not selected";
+  const channelDefinitions =
+    selectedInlayStyle?.channels ||
+    [];
 
-  if (memorialName && mineralName) {
-    value = `${memorialName} + ${mineralName}`;
-  } else if (memorialName) {
-    value = memorialName;
-  } else if (mineralName) {
-    value = mineralName;
-  }
+  const channelSummaries =
+    channelDefinitions.map(
+      (channel, index) => {
+        const selection =
+          selectedChannels[
+            channel.id
+          ] || {};
 
-  return {
-    id: channel.id || `channel-${index + 1}`,
-    label: channel.name || `Channel ${index + 1}`,
-    value,
-    glowName,
-  };
-});
+        const memorialName =
+          selection.memorial
+            ? memorialMaterials.find(
+                (material) =>
+                  material.id ===
+                  selection.memorial
+              )?.name ||
+              selection.memorial
+            : null;
 
-  const usesChannelSelections = channelDefinitions.length > 0;
+        const mineralName =
+          selection.mineral
+            ?.name ||
+          selection.mineral
+            ?.id ||
+          null;
+
+        const glowName =
+          selection.glow
+            ?.name ||
+          selection.glow
+            ?.id ||
+          (typeof selection.glow ===
+          "string"
+            ? selection.glow
+            : null);
+
+        let value =
+          "Not selected";
+
+        if (
+          memorialName &&
+          mineralName
+        ) {
+          value =
+            `${memorialName} + ${mineralName}`;
+        } else if (
+          memorialName
+        ) {
+          value =
+            memorialName;
+        } else if (
+          mineralName
+        ) {
+          value =
+            mineralName;
+        }
+
+        return {
+          id:
+            channel.id ||
+            `channel-${
+              index + 1
+            }`,
+
+          label:
+            channel.name ||
+            `Channel ${
+              index + 1
+            }`,
+
+          value,
+          glowName,
+        };
+      }
+    );
+
+  const usesChannelSelections =
+    channelDefinitions.length >
+    0;
 
   async function handleSaveDesign() {
     const design = {
-      collectionId: collection.id,
-      collectionName: collection.name,
-      material: selectedMaterial,
-      core: selectedCore?.id,
-      width: selectedWidth?.width,
-      size: selectedSize,
-      design: selectedInlayStyle?.id,
+      collectionId:
+        collection.id,
 
-      memorialMaterials: selectedMaterials,
-      minerals: selectedMinerals.map((mineral) => mineral.id),
-      channels: serializeChannels(selectedChannels),
-      accentMaterials: selectedAccentMaterials,
-      keepsakeMaterial: selectedKeepsakeMaterial,
-      birthstone: selectedBirthstone,
-      
-      glow: selectedGlow?.id,
+      collectionName:
+        collection.name,
+
+      material:
+        selectedMaterial,
+
+      core:
+        selectedCore?.id,
+
+      width:
+        selectedWidth?.width,
+
+      size:
+        selectedSize,
+
+      design:
+        selectedInlayStyle?.id,
+
+      memorialMaterials:
+        selectedMaterials,
+
+      minerals:
+        selectedMinerals.map(
+          (mineral) =>
+            mineral.id
+        ),
+
+      channels:
+        serializeChannels(
+          selectedChannels
+        ),
+
+      accentMaterials:
+        selectedAccentMaterials,
+
+      keepsakeMaterial:
+        selectedKeepsakeMaterial,
+
+      birthstone:
+        selectedBirthstone,
+
+      glow:
+        selectedGlow?.id,
 
       engravingEnabled,
-      engravingText,
-      engravingFont: selectedEngravingFont?.id,
 
-      totalPrice,
+      engravingText,
+
+      engravingFont:
+        selectedEngravingFont
+          ?.id,
+
+      totalPrice:
+        numericTotalPrice,
+
+      regularPrice:
+        numericRegularPrice,
+
+      sitewideSale:
+        saleActive
+          ? {
+              name:
+                saleLabel,
+
+              percent:
+                numericSalePercent,
+            }
+          : null,
     };
 
-    const designId = saveDesign(design);
+    const designId =
+      saveDesign(design);
 
     const cleanUrl =
       `${window.location.origin}${window.location.pathname}` +
       `?design=${designId}`;
 
-    await navigator.clipboard.writeText(cleanUrl);
+    await navigator.clipboard.writeText(
+      cleanUrl
+    );
 
     setCopied(true);
 
@@ -129,158 +283,292 @@ totalPrice,
 
   function handleAddToCart() {
     const cartItem = {
-      collectionId: collection.id,
-      collectionName: collection.name,
+      collectionId:
+        collection.id,
 
-      material: selectedMaterial,
-      core: selectedCore,
-      width: selectedWidth,
-      channelWidth: selectedWidth?.channel,
-      size: selectedSize,
+      collectionName:
+        collection.name,
 
-      design: selectedInlayStyle,
+      material:
+        selectedMaterial,
 
-      memorialMaterials: selectedMaterials,
-      minerals: selectedMinerals,
-      channels: selectedChannels,
-      accentMaterials: selectedAccentMaterials,
+      core:
+        selectedCore,
 
-      glow: selectedGlow,
+      width:
+        selectedWidth,
+
+      channelWidth:
+        selectedWidth
+          ?.channel,
+
+      size:
+        selectedSize,
+
+      design:
+        selectedInlayStyle,
+
+      memorialMaterials:
+        selectedMaterials,
+
+      minerals:
+        selectedMinerals,
+
+      channels:
+        selectedChannels,
+
+      accentMaterials:
+        selectedAccentMaterials,
+
+      glow:
+        selectedGlow,
 
       engravingEnabled,
-engravingType,
-engravingText,
-engravingFont: selectedEngravingFont,
 
-specialRequest,
+      engravingType,
 
-price: totalPrice,
+      engravingText,
 
-      image: mainImage || collection.heroImage,
+      engravingFont:
+        selectedEngravingFont,
+
+      specialRequest,
+
+      /*
+       * Customer-facing amount.
+       * During a sale this is the
+       * discounted jewelry price.
+       */
+      price:
+        numericTotalPrice,
+
+      /*
+       * Always preserve the normal
+       * configured price.
+       *
+       * Cart + Stripe can use this
+       * later to calculate the
+       * current site-wide sale
+       * exactly once.
+       */
+      regularPrice:
+        numericRegularPrice,
+
+      sitewideSale:
+        saleActive
+          ? {
+              name:
+                saleLabel,
+
+              percent:
+                numericSalePercent,
+            }
+          : null,
+
+      image:
+        mainImage ||
+        collection.heroImage,
     };
 
-    addItem(cartItem);
+    addItem(
+      cartItem
+    );
 
-    alert("Your ring has been added to your cart!");
+    setAddedToCart(
+      true
+    );
+
+    setTimeout(() => {
+      setAddedToCart(
+        false
+      );
+    }, 2000);
   }
 
   return (
     <section
       style={{
-        marginTop: 0,
-        padding: 16,
-        border: "1px solid rgba(255,255,255,.18)",
-        borderRadius: "18px",
-        background: "rgba(255,255,255,.05)",
+        marginTop:
+          0,
+
+        padding:
+          16,
+
+        border:
+          "1px solid rgba(255,255,255,.18)",
+
+        borderRadius:
+          "18px",
+
+        background:
+          "rgba(255,255,255,.05)",
       }}
     >
-      <h2 style={{ marginBottom: 10, fontSize: 22, fontWeight: 700 }}>
+      <h2
+        style={{
+          marginBottom:
+            10,
+
+          fontSize:
+            22,
+
+          fontWeight:
+            700,
+        }}
+      >
         Your Ring
       </h2>
 
-      <CompactItem label="Collection" value={collection.name} full />
+      <CompactItem
+        label="Collection"
+        value={
+          collection.name
+        }
+        full
+      />
 
       <div
         style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 8,
-          marginBottom: 10,
+          display:
+            "grid",
+
+          gridTemplateColumns:
+            "1fr 1fr",
+
+          gap:
+            8,
+
+          marginBottom:
+            10,
         }}
       >
         <CompactItem
           label="Material"
-          value={selectedMaterial || "Not selected"}
+          value={
+            selectedMaterial ||
+            "Not selected"
+          }
         />
 
-        <CompactItem
-          label="Style"
-          value={styleName || "Not selected"}
-        />
+        {styleName && (
+          <CompactItem
+            label="Style"
+            value={
+              styleName
+            }
+          />
+        )}
 
-        {collection.builder === "keepsake" ? (
-  <CompactItem
-    label="Profile"
-    value="Slim"
-  />
-) : (
-  <>
-    <CompactItem
-      label="Width"
-      value={
-        selectedWidth?.width
-          ? `${selectedWidth.width}mm`
-          : "Not selected"
-      }
-    />
+        {collection.builder ===
+        "keepsake" ? (
+          <CompactItem
+            label="Profile"
+            value="Slim"
+          />
+        ) : (
+          <>
+            <CompactItem
+              label="Width"
+              value={
+                selectedWidth
+                  ?.width
+                  ? `${selectedWidth.width}mm`
+                  : "Not selected"
+              }
+            />
 
-    <CompactItem
-      label="Channel"
-      value={
-        selectedWidth?.channel
-          ? `${selectedWidth.channel}mm`
-          : "Not selected"
-      }
-    />
-  </>
-)}
+            {Number(
+              selectedWidth
+                ?.channel
+            ) > 0 && (
+              <CompactItem
+                label="Channel"
+                value={`${selectedWidth.channel}mm`}
+              />
+            )}
+          </>
+        )}
 
         <CompactItem
           label="Size"
-          value={selectedSize || "Not selected"}
+          value={
+            selectedSize ||
+            "Not selected"
+          }
         />
       </div>
 
-      {collection.builder !== "keepsake" && (
-  <SummaryRow
-    label="Design"
-    value={selectedInlayStyle?.name || "Not selected"}
-  />
-)}
-{collection.builder === "keepsake" ? (
-  <>
-    <SummaryRow
-      label="Keepsake Material"
-      value={
-        selectedKeepsakeMaterial === "breastMilk"
-          ? "Breast Milk"
-          : "Cremation Ashes"
-      }
-    />
+      {collection.builder !==
+        "keepsake" && (
+        <SummaryRow
+          label="Design"
+          value={
+            selectedInlayStyle
+              ?.name ||
+            "Not selected"
+          }
+        />
+      )}
 
-    <SummaryRow
-      label="Birthstone"
-      value={
-        selectedBirthstone
-          ? `${selectedBirthstone.month} • ${selectedBirthstone.stone}`
-          : "Not selected"
-      }
-    />
-  </>
-) : usesChannelSelections ? (
-      
-        channelSummaries.map((channel) => (
-  <div key={channel.id}>
-    <SummaryRow
-      label={channel.label}
-      value={channel.value}
-    />
+      {collection.builder ===
+      "keepsake" ? (
+        <>
+          <SummaryRow
+            label="Keepsake Material"
+            value={
+              selectedKeepsakeMaterial ===
+              "breastMilk"
+                ? "Breast Milk"
+                : "Cremation Ashes"
+            }
+          />
 
-    {channel.glowName && (
-      <SummaryRow
-        label={`${channel.label} Glow Powder`}
-        value={channel.glowName}
-      />
-    )}
-  </div>
-))
+          <SummaryRow
+            label="Birthstone"
+            value={
+              selectedBirthstone
+                ? `${selectedBirthstone.month} • ${selectedBirthstone.stone}`
+                : "Not selected"
+            }
+          />
+        </>
+      ) : usesChannelSelections ? (
+        channelSummaries.map(
+          (channel) => (
+            <div
+              key={
+                channel.id
+              }
+            >
+              <SummaryRow
+                label={
+                  channel.label
+                }
+                value={
+                  channel.value
+                }
+              />
+
+              {channel.glowName && (
+                <SummaryRow
+                  label={`${channel.label} Glow Powder`}
+                  value={
+                    channel.glowName
+                  }
+                />
+              )}
+            </div>
+          )
+        )
       ) : (
         <>
           <SummaryRow
             label="Memorial Material"
             value={
               memorialNames.length
-                ? memorialNames.join(", ")
+                ? memorialNames.join(
+                    ", "
+                  )
                 : "None"
             }
           />
@@ -289,234 +577,558 @@ price: totalPrice,
             label="Minerals"
             value={
               mineralNames.length
-                ? mineralNames.join(", ")
+                ? mineralNames.join(
+                    ", "
+                  )
                 : "None"
             }
           />
         </>
       )}
 
-      {accentNames.length > 0 && (
+      {accentNames.length >
+        0 && (
         <SummaryRow
           label="Accent Materials"
-          value={accentNames.join(", ")}
+          value={
+            accentNames.join(
+              ", "
+            )
+          }
         />
       )}
 
-      {collection.builder !== "keepsake" && !usesChannelSelections && (
-  <SummaryRow
-    label="Glow Powder"
-    value={selectedGlow ? selectedGlow.name : "None"}
-  />
-)}
+      {collection.builder !==
+        "keepsake" &&
+        selectedGlow && (
+          <SummaryRow
+            label="Glow Powder"
+            value={
+              selectedGlow.name
+            }
+          />
+        )}
 
-      {collection.builder !== "keepsake" && (
-  <>
-    <SummaryRow
-  label="Engraving"
-  value={
-    !engravingEnabled
-      ? "None"
-      : engravingType === "customSignature"
-      ? "Handwritten Signature"
-      : engravingText || "(No text entered yet)"
-  }
-/>
+      {collection.builder !==
+        "keepsake" && (
+        <>
+          <SummaryRow
+            label="Engraving"
+            value={
+              !engravingEnabled
+                ? "None"
+                : engravingType ===
+                    "customSignature"
+                  ? "Handwritten Signature"
+                  : engravingText ||
+                    "(No text entered yet)"
+            }
+          />
 
-    {specialRequest && (
-      <SummaryRow
-        label="⭐ Special Request"
-        value="Yes"
+          {specialRequest && (
+            <SummaryRow
+              label="⭐ Special Request"
+              value="Yes"
+            />
+          )}
+        </>
+      )}
+
+      {collection.builder !==
+        "keepsake" &&
+        engravingEnabled &&
+        engravingType !==
+          "customSignature" && (
+          <SummaryRow
+            label="Font"
+            value={
+              selectedEngravingFont
+                ?.name ||
+              "Not selected"
+            }
+          />
+        )}
+
+      <hr
+        style={{
+          margin:
+            "12px 0",
+
+          opacity:
+            0.2,
+        }}
       />
-    )}
-  </>
-)}
 
-{collection.builder !== "keepsake" &&
-  engravingEnabled &&
-  engravingType !== "customSignature" && (
-    <SummaryRow
-      label="Font"
-      value={selectedEngravingFont?.name || "Not selected"}
-    />
-)}
-      
+      {saleActive && (
+        <div
+          style={{
+            marginBottom:
+              "10px",
 
-      <hr style={{ margin: "12px 0", opacity: 0.2 }} />
+            padding:
+              "9px 10px",
+
+            borderRadius:
+              "10px",
+
+            border:
+              "1px solid rgba(233,192,84,.35)",
+
+            background:
+              "rgba(233,192,84,.08)",
+
+            textAlign:
+              "center",
+          }}
+        >
+          <div
+            style={{
+              fontSize:
+                "12px",
+
+              fontWeight:
+                800,
+
+              color:
+                "rgb(233, 192, 84)",
+            }}
+          >
+            {saleLabel}
+          </div>
+
+          <div
+            style={{
+              marginTop:
+                "2px",
+
+              fontSize:
+                "11px",
+
+              opacity:
+                0.8,
+            }}
+          >
+            {numericSalePercent}% off your configured jewelry
+          </div>
+        </div>
+      )}
 
       <div
         style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 12,
+          display:
+            "flex",
+
+          justifyContent:
+            "space-between",
+
+          alignItems:
+            "center",
+
+          marginBottom:
+            12,
         }}
       >
-        <span style={{ fontSize: 15, opacity: 0.8 }}>
+        <span
+          style={{
+            fontSize:
+              15,
+
+            opacity:
+              0.8,
+          }}
+        >
           Total
         </span>
 
-        <span style={{ fontSize: 23, fontWeight: "bold" }}>
-          ${Number(totalPrice || 0).toFixed(2)}
-        </span>
+        <div
+          style={{
+            textAlign:
+              "right",
+          }}
+        >
+          {saleActive && (
+            <div
+              style={{
+                fontSize:
+                  "14px",
+
+                opacity:
+                  0.55,
+
+                textDecoration:
+                  "line-through",
+
+                marginBottom:
+                  "1px",
+              }}
+            >
+              $
+              {numericRegularPrice.toFixed(
+                2
+              )}
+            </div>
+          )}
+
+          <span
+            style={{
+              fontSize:
+                23,
+
+              fontWeight:
+                "bold",
+
+              color:
+                saleActive
+                  ? "rgb(233, 192, 84)"
+                  : "inherit",
+            }}
+          >
+            $
+            {numericTotalPrice.toFixed(
+              2
+            )}
+          </span>
+        </div>
       </div>
 
       <button
         type="button"
-        onClick={handleAddToCart}
+        onClick={
+          handleAddToCart
+        }
         style={{
-          width: "100%",
-          padding: "14px",
-          marginBottom: "10px",
-          borderRadius: "12px",
-          border: "none",
-          cursor: "pointer",
-          fontSize: "16px",
-          fontWeight: 700,
-          color: "#111",
+          width:
+            "100%",
+
+          padding:
+            "14px",
+
+          marginBottom:
+            "10px",
+
+          borderRadius:
+            "12px",
+
+          border:
+            "none",
+
+          cursor:
+            "pointer",
+
+          fontSize:
+            "16px",
+
+          fontWeight:
+            700,
+
+          color:
+            addedToCart
+              ? "white"
+              : "#111",
+
           background:
-            "linear-gradient(135deg, rgb(233, 192, 84), rgb(184, 134, 11))",
-          boxShadow: "0 6px 20px rgba(184,134,11,.35)",
+            addedToCart
+              ? "#2e7d32"
+              : "linear-gradient(135deg, rgb(233, 192, 84), rgb(184, 134, 11))",
+
+          boxShadow:
+            addedToCart
+              ? "0 6px 20px rgba(46,125,50,.30)"
+              : "0 6px 20px rgba(184,134,11,.35)",
+
+          transition:
+            "all 0.2s ease",
         }}
       >
-        Add to Cart
+        {addedToCart
+          ? "Added to Cart ✓"
+          : "Add to Cart"}
       </button>
 
       <button
         type="button"
-        onClick={handleSaveDesign}
+        onClick={
+          handleSaveDesign
+        }
         style={{
-          width: "100%",
-          padding: "11px",
-          marginBottom: "8px",
-          borderRadius: "12px",
-          border: "1px solid rgba(255,255,255,.18)",
-          cursor: "pointer",
-          fontSize: "14px",
-          fontWeight: 700,
-          color: "white",
-          background: "rgba(255,255,255,.06)",
+          width:
+            "100%",
+
+          padding:
+            "11px",
+
+          marginBottom:
+            "8px",
+
+          borderRadius:
+            "12px",
+
+          border:
+            "1px solid rgba(255,255,255,.18)",
+
+          cursor:
+            "pointer",
+
+          fontSize:
+            "14px",
+
+          fontWeight:
+            700,
+
+          color:
+            "white",
+
+          background:
+            "rgba(255,255,255,.06)",
         }}
       >
-        {copied ? "Design Link Copied!" : "Save My Design"}
+        {copied
+          ? "Design Link Copied!"
+          : "Save My Design"}
       </button>
 
       <div
         style={{
-          textAlign: "center",
-          fontSize: "12px",
-          opacity: 0.75,
-          marginBottom: "12px",
+          textAlign:
+            "center",
+
+          fontSize:
+            "12px",
+
+          opacity:
+            0.75,
+
+          marginBottom:
+            "12px",
         }}
       >
         Looking for something completely unique?
         <br />
-        <strong>Request a Custom Design</strong>
+
+        <strong>
+          Request a Custom Design
+        </strong>
       </div>
 
       <div
         style={{
-          display: "grid",
-          gap: 5,
-          fontSize: 12,
-          lineHeight: 1.3,
-          opacity: 0.9,
+          display:
+            "grid",
+
+          gap:
+            5,
+
+          fontSize:
+            12,
+
+          lineHeight:
+            1.3,
+
+          opacity:
+            0.9,
         }}
       >
         <TrustLine text="Proudly Made in North Carolina" />
+
         <TrustLine text="Genuine Natural Minerals" />
+
         <TrustLine text="Crafted for Life's Journey" />
-        <TrustLine text="Carefully Handcrafted • Estimated 2–10 Week Completion" />
+
+        <TrustLine
+          text={`Carefully Handcrafted • Estimated ${
+            collection
+              .siteSettings
+              ?.turnaroundMinWeeks ??
+            2
+          }–${
+            collection
+              .siteSettings
+              ?.turnaroundMaxWeeks ??
+            10
+          } Week Completion`}
+        />
       </div>
     </section>
   );
 }
 
-function serializeChannels(selectedChannels) {
+function serializeChannels(
+  selectedChannels
+) {
   return Object.fromEntries(
-    Object.entries(selectedChannels).map(([channelId, selection]) => [
-      channelId,
-      {
-        type: selection?.type || null,
-        memorial: selection?.memorial || null,
-        mineral: selection?.mineral?.id || null,
-        glow:
-          selection?.glow?.id ||
-          selection?.glow ||
-          null,
-      },
-    ])
+    Object.entries(
+      selectedChannels
+    ).map(
+      ([
+        channelId,
+        selection,
+      ]) => [
+        channelId,
+
+        {
+          type:
+            selection?.type ||
+            null,
+
+          memorial:
+            selection
+              ?.memorial ||
+            null,
+
+          mineral:
+            selection
+              ?.mineral
+              ?.id ||
+            null,
+
+          glow:
+            selection
+              ?.glow
+              ?.id ||
+            selection
+              ?.glow ||
+            null,
+        },
+      ]
+    )
   );
 }
 
-function CompactItem({ label, value, full }) {
+function CompactItem({
+  label,
+  value,
+  full,
+}) {
   return (
     <div
       style={{
-        gridColumn: full ? "1 / -1" : "auto",
-        padding: "8px 10px",
-        border: "1px solid rgba(255,255,255,.12)",
-        borderRadius: "10px",
-        background: "rgba(255,255,255,.04)",
+        gridColumn:
+          full
+            ? "1 / -1"
+            : "auto",
+
+        padding:
+          "8px 10px",
+
+        border:
+          "1px solid rgba(255,255,255,.12)",
+
+        borderRadius:
+          "10px",
+
+        background:
+          "rgba(255,255,255,.04)",
       }}
     >
       <div
         style={{
-          fontSize: 10,
-          textTransform: "uppercase",
-          letterSpacing: "0.08em",
-          opacity: 0.55,
-          marginBottom: 3,
+          fontSize:
+            10,
+
+          textTransform:
+            "uppercase",
+
+          letterSpacing:
+            "0.08em",
+
+          opacity:
+            0.55,
+
+          marginBottom:
+            3,
         }}
       >
         {label}
       </div>
 
-      <div style={{ fontSize: 13, fontWeight: 700 }}>
+      <div
+        style={{
+          fontSize:
+            13,
+
+          fontWeight:
+            700,
+        }}
+      >
         {value}
       </div>
     </div>
   );
 }
 
-function SummaryRow({ label, value }) {
+function SummaryRow({
+  label,
+  value,
+}) {
   return (
     <div
       style={{
-        padding: "5px 0",
-        borderBottom: "1px solid rgba(255,255,255,.1)",
+        padding:
+          "5px 0",
+
+        borderBottom:
+          "1px solid rgba(255,255,255,.1)",
       }}
     >
       <div
         style={{
-          fontSize: 10,
-          textTransform: "uppercase",
-          letterSpacing: "0.08em",
-          opacity: 0.55,
-          marginBottom: 2,
+          fontSize:
+            10,
+
+          textTransform:
+            "uppercase",
+
+          letterSpacing:
+            "0.08em",
+
+          opacity:
+            0.55,
+
+          marginBottom:
+            2,
         }}
       >
         ✓ {label}
       </div>
 
-      <div style={{ fontSize: 13, fontWeight: 600 }}>
+      <div
+        style={{
+          fontSize:
+            13,
+
+          fontWeight:
+            600,
+        }}
+      >
         {value}
       </div>
     </div>
   );
 }
 
-function TrustLine({ text }) {
+function TrustLine({
+  text,
+}) {
   return (
     <div
       style={{
-        display: "flex",
-        gap: 7,
-        alignItems: "flex-start",
+        display:
+          "flex",
+
+        gap:
+          7,
+
+        alignItems:
+          "flex-start",
       }}
     >
-      <span>✓</span>
-      <span>{text}</span>
+      <span>
+        ✓
+      </span>
+
+      <span>
+        {text}
+      </span>
     </div>
   );
 }

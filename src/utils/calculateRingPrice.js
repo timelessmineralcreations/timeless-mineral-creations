@@ -1,3 +1,5 @@
+import { accentMaterials } from "@/data/accentMaterials";
+
 export default function calculateRingPrice({
   collection,
   selectedCore,
@@ -13,17 +15,24 @@ export default function calculateRingPrice({
   specialRequest = false,
   selectedMaterial,
 }) {
-  const usingDatabasePricing = Boolean(
+  const pricing =
     collection?.useDatabasePricing &&
-      collection?.databasePricing
-  );
+    collection?.databasePricing
+      ? collection.databasePricing
+      : collection?.pricing || {};
 
-  const pricing = usingDatabasePricing
-    ? collection.databasePricing
-    : collection?.pricing || {};
+  const usingDatabasePricing =
+    collection?.useDatabasePricing &&
+    collection?.databasePricing;
 
   let totalPrice = 0;
 
+  /*
+   * DATABASE COLLECTIONS
+   *
+   * Database pricing separates the base product
+   * and profit, so include both.
+   */
   if (usingDatabasePricing) {
     totalPrice += Number(
       pricing.baseProduct || 0
@@ -33,82 +42,132 @@ export default function calculateRingPrice({
       pricing.profit || 0
     );
   } else {
+    /*
+     * LEGACY COLLECTIONS
+     *
+     * Preserve the existing pricing behavior so
+     * the older hand-coded collections do not
+     * suddenly change price.
+     */
     totalPrice += Number(
       pricing.profit || 100
     );
   }
 
-  // Ring metal / core cost
+  /*
+   * METAL / BAND MATERIAL
+   */
   const metal =
     selectedMaterial ||
     selectedCore?.material ||
     collection?.defaults?.metal;
 
-  totalPrice += Number(pricing.metal?.[metal] || 0);
+  if (metal) {
+    totalPrice += Number(
+      pricing.metal?.[metal] || 0
+    );
+  }
 
-  // Width upgrade
+  /*
+   * WIDTH
+   */
   const width =
     selectedWidth?.width ??
     selectedWidth ??
     collection?.defaults?.width;
 
-  totalPrice += Number(pricing.width?.[width] || 0);
+  if (width != null) {
+    totalPrice += Number(
+      pricing.width?.[width] || 0
+    );
+  }
 
-  // Selected inlay design price
+  /*
+   * INLAY STYLE
+   */
   const inlayStyleId =
     typeof selectedInlayStyle === "string"
       ? selectedInlayStyle
       : selectedInlayStyle?.id;
 
-  totalPrice += Number(
-    pricing.inlayStyles?.[inlayStyleId] || 0
+  if (inlayStyleId) {
+    totalPrice += Number(
+      pricing.inlayStyles?.[
+        inlayStyleId
+      ] || 0
+    );
+  }
+
+  /*
+   * MEMORIAL MATERIALS
+   */
+  selectedMaterials.forEach(
+    (material) => {
+      const materialId =
+        typeof material === "string"
+          ? material
+          : material?.id;
+
+      totalPrice += Number(
+        pricing.memorialMaterials?.[
+          materialId
+        ] ??
+          material?.price ??
+          0
+      );
+    }
   );
 
-  // Memorial materials
-  selectedMaterials.forEach((material) => {
-    const materialId =
-      typeof material === "string"
-        ? material
-        : material?.id;
+  /*
+   * MINERALS
+   */
+  selectedMinerals.forEach(
+    (mineral) => {
+      const mineralId =
+        typeof mineral === "string"
+          ? mineral
+          : mineral?.id;
 
-    totalPrice += Number(
-      pricing.memorialMaterials?.[materialId] ??
-        material?.price ??
-        0
-    );
-  });
+      totalPrice += Number(
+        pricing.minerals?.[
+          mineralId
+        ] ??
+          mineral?.price ??
+          0
+      );
+    }
+  );
 
-  // Minerals
-  selectedMinerals.forEach((mineral) => {
-    const mineralId =
-      typeof mineral === "string"
-        ? mineral
-        : mineral?.id;
+  /*
+   * ACCENT MATERIALS
+   */
+  selectedAccentMaterials.forEach(
+    (accent) => {
+      const accentId =
+        typeof accent === "string"
+          ? accent
+          : accent?.id;
 
-    totalPrice += Number(
-      pricing.minerals?.[mineralId] ??
-        mineral?.price ??
-        0
-    );
-  });
+      const accentData =
+        accentMaterials.find(
+          (item) =>
+            item.id === accentId
+        );
 
- // Accent materials
-selectedAccentMaterials.forEach((accent) => {
-  const accentId =
-    typeof accent === "string"
-      ? accent
-      : accent?.id;
+      totalPrice += Number(
+        pricing.accentMaterials?.[
+          accentId
+        ] ??
+          accent?.price ??
+          accentData?.price ??
+          0
+      );
+    }
+  );
 
-  if (accentId === "goldFoil") {
-    totalPrice += 20;
-  }
-
-  if (accentId === "silverFoil") {
-    totalPrice += 20;
-  }
-});
-
-  // Global glow used by standard collections
+  /*
+   * GLOBAL GLOW
+   */
   const hasGlobalGlow =
     selectedGlow &&
     selectedGlow !== "none" &&
@@ -116,45 +175,65 @@ selectedAccentMaterials.forEach((accent) => {
 
   if (hasGlobalGlow) {
     totalPrice += Number(
-      selectedGlow?.price ?? pricing.glow ?? 0
+      selectedGlow?.price ??
+        pricing.glow ??
+        0
     );
   }
 
-  // Separate glow selections used inside channels or inlays
-  const channelGlowTotal = Object.values(
-    selectedChannels
-  ).reduce((total, selection) => {
-    const glow = selection?.glow;
+  /*
+   * CHANNEL GLOW
+   */
+  const channelGlowTotal =
+    Object.values(
+      selectedChannels
+    ).reduce(
+      (total, selection) => {
+        const glow =
+          selection?.glow;
 
-    if (
-      !glow ||
-      glow === "none" ||
-      glow?.id === "none"
-    ) {
-      return total;
-    }
+        if (
+          !glow ||
+          glow === "none" ||
+          glow?.id === "none"
+        ) {
+          return total;
+        }
 
-    return (
-      total +
-      Number(glow?.price ?? pricing.glow ?? 0)
+        return (
+          total +
+          Number(
+            glow?.price ??
+              pricing.glow ??
+              0
+          )
+        );
+      },
+      0
     );
-  }, 0);
 
   totalPrice += channelGlowTotal;
 
-  // Engraving
-  if (engravingEnabled) {
-    totalPrice += Number(
-      engravingType === "customSignature"
-        ? pricing.engraving?.customSignature || 0
-        : pricing.engraving?.standard || 0
-    );
-  }
+  /*
+ * ENGRAVING
+ */
+if (engravingEnabled) {
+  const engravingPrice =
+    engravingType === "customSignature"
+      ? pricing.engraving?.customSignature ?? 50
+      : pricing.engraving?.standard ?? 25;
 
-  // Special request
+  totalPrice += Number(
+    engravingPrice
+  );
+}
+
+  /*
+   * SPECIAL REQUEST
+   */
   if (specialRequest) {
     totalPrice += Number(
-      pricing.specialRequest || 30
+      pricing.specialRequest ?? 30
     );
   }
 

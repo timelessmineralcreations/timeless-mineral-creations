@@ -1,10 +1,29 @@
 export const legacyCrossPendantCores = [
   {
     id: "legacy-cross-white-gold-plated",
+
     name: "White Gold Plated",
-    finish: "White Gold Plated",
+
+    productType: "cross",
 
     material: "Solid 925 Sterling Silver",
+
+    finish: "White Gold Plated",
+
+    supplier: "Lancelot DIY",
+
+    supplierModel: "YOUR MODEL NUMBER",
+
+    supplierCost: 19.5,
+
+    estimatedShippingCost: 10,
+
+    landedCost: 29.5,
+
+    supplierUrl: "YOUR PRODUCT URL",
+
+    notes:
+      "Legacy cross keepsake pendant with a full cross resin inlay. Optional 16-inch chain with 2-inch extender. No engraving.",
 
     materialDescription:
       "Solid 925 sterling silver finished with a bright white gold plating.",
@@ -37,10 +56,29 @@ export const legacyCrossPendantCores = [
 
   {
     id: "legacy-cross-yellow-gold-plated",
+
     name: "Yellow Gold Plated",
-    finish: "Yellow Gold Plated",
+
+    productType: "cross",
 
     material: "Solid 925 Sterling Silver",
+
+    finish: "Yellow Gold Plated",
+
+    supplier: "Lancelot DIY",
+
+    supplierModel: "YOUR MODEL NUMBER",
+
+    supplierCost: 19.5,
+
+    estimatedShippingCost: 10,
+
+    landedCost: 29.5,
+
+    supplierUrl: "YOUR PRODUCT URL",
+
+    notes:
+      "Legacy cross keepsake pendant with a full cross resin inlay. Optional 16-inch chain with 2-inch extender. No engraving.",
 
     materialDescription:
       "Solid 925 sterling silver finished with a warm yellow gold plating.",
@@ -77,10 +115,29 @@ export const legacyCrossPendantCores = [
 
   {
     id: "legacy-cross-rose-gold-plated",
+
     name: "Rose Gold Plated",
-    finish: "Rose Gold Plated",
+
+    productType: "cross",
 
     material: "Solid 925 Sterling Silver",
+
+    finish: "Rose Gold Plated",
+
+    supplier: "Lancelot DIY",
+
+    supplierModel: "YOUR MODEL NUMBER",
+
+    supplierCost: 19.5,
+
+    estimatedShippingCost: 10,
+
+    landedCost: 29.5,
+
+    supplierUrl: "YOUR PRODUCT URL",
+
+    notes:
+      "Legacy cross keepsake pendant with a full cross resin inlay. Optional 16-inch chain with 2-inch extender. No engraving.",
 
     materialDescription:
       "Solid 925 sterling silver finished with a soft rose gold plating.",

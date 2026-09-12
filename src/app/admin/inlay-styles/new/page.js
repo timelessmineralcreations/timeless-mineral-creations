@@ -1,3 +1,4 @@
+import { requireAdmin } from "@/lib/require-admin";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -15,6 +16,7 @@ function createSlug(value) {
 
 async function createInlayStyle(formData) {
   "use server";
+  await requireAdmin();
 
   const name = String(formData.get("name") || "").trim();
   const submittedSlug = String(formData.get("slug") || "").trim();

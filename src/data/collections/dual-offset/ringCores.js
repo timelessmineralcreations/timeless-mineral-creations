@@ -16,11 +16,20 @@ export const dualOffsetRingCores = [
   {
     id: "dual-offset-tungsten-hammered-ringsupplies",
 
-    name: "Hammered Tungsten",
+    name: "Hammered Tungsten Dual Offset Ring",
+
+    description:
+      "Hammered tungsten memorial ring featuring two offset inlay channels with a rugged exterior and comfort-fit interior.",
 
     material: "Tungsten",
 
     finish: "Hammered",
+
+    color: "Silver",
+
+    style: "Dual Offset",
+
+    edge: "Hammered",
 
     supplier: "RingSupplies",
 
@@ -54,11 +63,20 @@ export const dualOffsetRingCores = [
   {
     id: "dual-offset-tungsten-smooth-ringsupplies",
 
-    name: "Smooth Tungsten (Large + Small Offset)",
+    name: "Smooth Tungsten Dual Offset Ring",
+
+    description:
+      "Polished tungsten memorial ring with one wide offset channel and one narrow accent channel for unique dual-material designs.",
 
     material: "Tungsten",
 
-    finish: "Smooth",
+    finish: "Polished",
+
+    color: "Silver",
+
+    style: "Dual Offset",
+
+    edge: "Comfort Fit",
 
     supplier: "RingSupplies",
 
@@ -94,11 +112,20 @@ export const dualOffsetRingCores = [
   {
     id: "dual-offset-black-ceramic-smooth-ringsupplies",
 
-    name: "Smooth Black Ceramic (Large + Small Offset)",
+    name: "Black Ceramic Dual Offset Ring",
+
+    description:
+      "Polished black ceramic memorial ring featuring one wide offset channel and one narrow accent channel with a modern comfort-fit design.",
 
     material: "Black Ceramic",
 
-    finish: "Smooth",
+    finish: "Polished",
+
+    color: "Black",
+
+    style: "Dual Offset",
+
+    edge: "Comfort Fit",
 
     supplier: "RingSupplies",
 

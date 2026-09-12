@@ -4,30 +4,34 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "build-ring-photos": "node scripts/build-ring-photos.js"
   },
   "dependencies": {
+    "@easypost/api": "^8.9.0",
     "@prisma/client": "^6.19.3",
     "@stripe/stripe-js": "^9.9.0",
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.38.4",
-    "@vercel/blob": "^2.6.1",
-    "next": "16.2.9",
+    "@vercel/blob": "^2.7.0",
+    "next": "^16.3.4",
     "next-auth": "^5.0.0-beta.32",
-    "prisma": "^6.19.3",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "resend": "^6.18.0",
+    "resend": "^6.22.0",
     "stripe": "^22.3.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
-    "eslint-config-next": "16.2.9",
+    "eslint-config-next": "^16.3.4",
+    "prisma": "^6.19.3",
     "tailwindcss": "^4"
+  },
+  "overrides": {
+    "deepmerge-ts": "8.0.1"
   }
 }
