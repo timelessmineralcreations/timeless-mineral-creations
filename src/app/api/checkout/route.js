@@ -739,21 +739,6 @@ function validateTrustedSelections(
       );
     }
 
-    if (
-      item.material &&
-      trustedCore.material &&
-      normalizeKey(
-        item.material
-      ) !==
-      normalizeKey(
-        trustedCore.material
-      )
-    ) {
-      throw new CheckoutValidationError(
-        "Selected material does not match the selected ring core."
-      );
-    }
-
     /*
      * Once the core itself has been
      * matched against the trusted
