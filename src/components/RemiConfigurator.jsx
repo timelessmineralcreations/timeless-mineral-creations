@@ -233,6 +233,8 @@ export default function RemiConfigurator({ collection }) {
   const { addItem } = useCart();
   const isNecklace = collection.productType === "necklace";
   const productLabel = isNecklace ? "Necklace" : "Ring";
+  const bezelEnabled =
+    collection.options?.bezelSize?.enabled !== false;
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [selectedRingSize, setSelectedRingSize] = useState("");
   const [selectedKeepsake, setSelectedKeepsake] = useState("ashes");
@@ -276,7 +278,7 @@ export default function RemiConfigurator({ collection }) {
   );
 
   const [selectedBezelId, setSelectedBezelId] = useState(
-    bezelOptions[0]?.id || ""
+    bezelEnabled ? bezelOptions[0]?.id || "" : ""
   );
 
   const selectedFinish =
@@ -284,8 +286,10 @@ export default function RemiConfigurator({ collection }) {
     finishOptions[0];
 
   const selectedBezel =
-    bezelOptions.find((bezel) => bezel.id === selectedBezelId) ||
-    bezelOptions[0];
+    bezelEnabled
+      ? bezelOptions.find((bezel) => bezel.id === selectedBezelId) ||
+        bezelOptions[0]
+      : null;
 
   const selectedChain =
     chainOptions.find((chain) => chain.id === selectedChainId) ||
@@ -486,10 +490,12 @@ const currentImage =
     0;
 
   const bezelPrice =
-    collection.pricing?.bezelSizes?.[selectedBezel?.id] ??
-    collection.pricing?.bezelSizes?.[selectedBezel?.name] ??
-    selectedBezel?.price ??
-    0;
+    bezelEnabled
+      ? collection.pricing?.bezelSizes?.[selectedBezel?.id] ??
+        collection.pricing?.bezelSizes?.[selectedBezel?.name] ??
+        selectedBezel?.price ??
+        0
+      : 0;
 
   const keepsakePrice =
     keepsakeOptions.find((option) => option.id === selectedKeepsake)
@@ -531,7 +537,7 @@ const currentImage =
   const requiredSelectionsComplete = Boolean(
     selectedFinishId &&
       (!isNecklace ? selectedRingSize : true) &&
-      selectedBezelId &&
+      (!bezelEnabled || selectedBezelId) &&
       selectedKeepsake &&
       (selectedKeepsake === "mineralBase"
         ? selectedBaseMineralId
@@ -558,8 +564,8 @@ const currentImage =
       finishId: selectedFinishId,
       finish: selectedFinish?.name || "",
       ringSize: isNecklace ? "" : selectedRingSize,
-      bezelId: selectedBezelId,
-      bezelSize: selectedBezel?.name || "",
+      bezelId: bezelEnabled ? selectedBezelId : "",
+      bezelSize: bezelEnabled ? selectedBezel?.name || "" : "",
       keepsakeBase: selectedKeepsake,
       keepsakeBaseName:
         selectedKeepsake === "mineralBase"
@@ -621,7 +627,7 @@ const currentImage =
         },
         finish: selectedFinish?.name || "",
         size: isNecklace ? "" : selectedRingSize,
-        bezelSize: selectedBezel?.name || "",
+        bezelSize: bezelEnabled ? selectedBezel?.name || "" : "",
         keepsakeMaterial: selectedKeepsake,
         keepsakeMaterialName:
           selectedKeepsake === "mineralBase"
@@ -830,7 +836,7 @@ const currentImage =
             </OptionSection>
           )}
 
-          {collection.options?.bezelSize?.enabled !== false && (
+          {bezelEnabled && (
   <OptionSection
           
             title="Choose Bezel Size"
