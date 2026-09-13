@@ -100,6 +100,11 @@ const navItems = [
     icon: "$",
   },
   {
+    label: "Contact",
+    href: "/admin/contact",
+    icon: "✉",
+  },
+  {
     label: "Settings",
     href: "/admin/settings",
     icon: "⚙",

@@ -889,4 +889,15 @@ model SiteSettings {
   instagramUrl String?
   tiktokUrl    String?
   etsyUrl      String?
+
+  // Contact page / Meet the Craftsman
+  contactCreatorImageUrl     String?
+  contactCreatorHeading      String?
+  contactCreatorIntro        String?
+  contactCreatorBodyOne      String?
+  contactCreatorBodyTwo      String?
+  contactLocationText        String?
+  contactResponseTimeText    String?
+  contactClosingText         String?
+  contactClosingThankYouText String?
 }

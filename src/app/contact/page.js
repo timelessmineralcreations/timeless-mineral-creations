@@ -1,4 +1,77 @@
-export default function ContactPage() {
+import { prisma } from "@/lib/prisma";
+
+export const dynamic = "force-dynamic";
+
+const SETTINGS_ID = "site-settings";
+
+const DEFAULTS = {
+  contactEmail: "timelessmineralcreations@gmail.com",
+  contactCreatorImageUrl: "",
+  contactCreatorHeading: "Meet the Craftsman",
+  contactCreatorIntro:
+    "Hi, I'm Michael, the owner and craftsman behind Timeless Mineral Creations.",
+  contactCreatorBodyOne:
+    "Every memorial ring is personally handcrafted by me in North Carolina. From the moment your memorial materials arrive to the final polishing and inspection, every step is completed with care, patience, and respect.",
+  contactCreatorBodyTwo:
+    "Thank you for trusting me with something so meaningful. It is truly an honor to help create a lasting tribute that preserves the memories of those who mean the most, whether they are beloved family members or cherished pets.",
+  contactLocationText:
+    "Proudly Handcrafted in North Carolina",
+  contactResponseTimeText:
+    "Within 24 Hours",
+  contactClosingText:
+    "Every memorial piece is handcrafted with care, respect, and attention to detail. Whether it's created to honor a beloved family member or a cherished pet, it is truly an honor to preserve a memory that will be treasured for a lifetime.",
+  contactClosingThankYouText:
+    "Thank you for trusting Timeless Mineral Creations.",
+};
+
+export default async function ContactPage() {
+  const storedSettings = await prisma.siteSettings.findUnique({
+    where: {
+      id: SETTINGS_ID,
+    },
+  });
+
+  const settings = {
+    contactEmail:
+      storedSettings?.contactEmail ||
+      DEFAULTS.contactEmail,
+
+    contactCreatorImageUrl:
+      storedSettings?.contactCreatorImageUrl ||
+      DEFAULTS.contactCreatorImageUrl,
+
+    contactCreatorHeading:
+      storedSettings?.contactCreatorHeading ||
+      DEFAULTS.contactCreatorHeading,
+
+    contactCreatorIntro:
+      storedSettings?.contactCreatorIntro ||
+      DEFAULTS.contactCreatorIntro,
+
+    contactCreatorBodyOne:
+      storedSettings?.contactCreatorBodyOne ||
+      DEFAULTS.contactCreatorBodyOne,
+
+    contactCreatorBodyTwo:
+      storedSettings?.contactCreatorBodyTwo ||
+      DEFAULTS.contactCreatorBodyTwo,
+
+    contactLocationText:
+      storedSettings?.contactLocationText ||
+      DEFAULTS.contactLocationText,
+
+    contactResponseTimeText:
+      storedSettings?.contactResponseTimeText ||
+      DEFAULTS.contactResponseTimeText,
+
+    contactClosingText:
+      storedSettings?.contactClosingText ||
+      DEFAULTS.contactClosingText,
+
+    contactClosingThankYouText:
+      storedSettings?.contactClosingThankYouText ||
+      DEFAULTS.contactClosingThankYouText,
+  };
   return (
     <>
       <style>{`
@@ -328,14 +401,14 @@ export default function ContactPage() {
                 <br />
 
                 <a
-                  href="mailto:timelessmineralcreations@gmail.com"
+                  href={`mailto:${settings.contactEmail}`}
                   style={{
                     color: "inherit",
                     textDecoration: "underline",
                     textUnderlineOffset: "4px",
                   }}
                 >
-                  timelessmineralcreations@gmail.com
+                  {settings.contactEmail}
                 </a>
               </div>
 
@@ -347,7 +420,7 @@ export default function ContactPage() {
                 <strong>Location</strong>
                 <br />
 
-                Proudly Handcrafted in North Carolina
+                {settings.contactLocationText}
               </div>
 
               <div>
@@ -358,7 +431,7 @@ export default function ContactPage() {
                 <strong>Typical Response Time</strong>
                 <br />
 
-                Within 24 Hours
+                {settings.contactResponseTimeText}
               </div>
             </div>
           </aside>
@@ -399,24 +472,38 @@ export default function ContactPage() {
         {/* Meet the Craftsman */}
         <section className="contact-craftsman">
           <div className="contact-workshop-photo">
-            <span
-              style={{
-                opacity: 0.55,
-                fontSize: "15px",
-                textAlign: "center",
-                padding: "20px",
-                lineHeight: 1.7,
-              }}
-            >
-              Workshop photo
-              <br />
-              coming soon
-            </span>
+            {settings.contactCreatorImageUrl ? (
+              <img
+                src={settings.contactCreatorImageUrl}
+                alt="Michael, owner of Timeless Mineral Creations"
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  display: "block",
+                  borderRadius: "inherit",
+                }}
+              />
+            ) : (
+              <span
+                style={{
+                  opacity: 0.55,
+                  fontSize: "15px",
+                  textAlign: "center",
+                  padding: "20px",
+                  lineHeight: 1.7,
+                }}
+              >
+                Workshop photo
+                <br />
+                coming soon
+              </span>
+            )}
           </div>
 
           <div style={{ minWidth: 0 }}>
             <h2 style={{ marginBottom: "20px" }}>
-              Meet the Craftsman
+              {settings.contactCreatorHeading}
             </h2>
 
             <p
@@ -426,8 +513,7 @@ export default function ContactPage() {
                 opacity: 0.88,
               }}
             >
-              Hi, I&apos;m Michael, the owner and craftsman behind Timeless
-              Mineral Creations.
+              {settings.contactCreatorIntro}
             </p>
 
             <p
@@ -438,10 +524,7 @@ export default function ContactPage() {
                 marginTop: "18px",
               }}
             >
-              Every memorial ring is personally handcrafted by me in North
-              Carolina. From the moment your memorial materials arrive to the
-              final polishing and inspection, every step is completed with care,
-              patience, and respect.
+              {settings.contactCreatorBodyOne}
             </p>
 
             <p
@@ -452,10 +535,7 @@ export default function ContactPage() {
                 marginTop: "18px",
               }}
             >
-              Thank you for trusting me with something so meaningful. It is truly
-              an honor to help create a lasting tribute that preserves the
-              memories of those who mean the most, whether they are beloved family
-              members or cherished pets.
+              {settings.contactCreatorBodyTwo}
             </p>
           </div>
         </section>
@@ -470,10 +550,7 @@ export default function ContactPage() {
               opacity: 0.9,
             }}
           >
-            Every memorial piece is handcrafted with care, respect, and attention
-            to detail. Whether it&apos;s created to honor a beloved family member
-            or a cherished pet, it is truly an honor to preserve a memory that
-            will be treasured for a lifetime.
+            {settings.contactClosingText}
           </p>
 
           <p
@@ -484,7 +561,7 @@ export default function ContactPage() {
               fontSize: "22px",
             }}
           >
-            Thank you for trusting Timeless Mineral Creations.
+            {settings.contactClosingThankYouText}
           </p>
         </section>
       </main>
